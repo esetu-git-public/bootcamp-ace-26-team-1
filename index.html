@@ -1,6 +1,8 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login - HealthAI</title>
     <link rel="stylesheet" href="CSS/style.css">
 </head>
@@ -19,11 +21,25 @@
             <h2>Login</h2>
 
             <input id="username" type="text" placeholder="Username">
-            <input id="password" type="password" placeholder="Password">
+
+            <div class="password-box">
+                <input id="password" type="password" placeholder="Password">
+                <span class="toggle-password" onclick="togglePassword()">👁️</span>
+            </div>
+
+            <div class="remember-box">
+                <label class="remember-label">
+                    <input type="checkbox">
+                    <span>Remember Me</span>
+                </label>
+
+                <a href="password.html">Forgot Password?</a>
+            </div>
 
             <button onclick="login()">Login</button>
 
-            <p>Don't have account?
+            <p style="margin-top:20px;">
+                Don't have account?
                 <a href="signup.html">Sign Up</a>
             </p>
         </div>
