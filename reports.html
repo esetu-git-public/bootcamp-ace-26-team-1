@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reports - HealthAI</title>
+    <link rel="stylesheet" href="CSS/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+<body>
+
+<script>
+if(localStorage.getItem("loggedIn") !== "true"){
+    window.location.href = "index.html";
+}
+</script>
+
+<div class="wrapper">
+
+<div class="sidebar">
+    <h2><i class="fa-solid fa-hospital"></i> HealthAI</h2>
+
+    <ul>
+        <li onclick="goTo('dashboard.html')"><i class="fa-solid fa-chart-line"></i> Dashboard</li>
+        <li onclick="goTo('patients.html')"><i class="fa-solid fa-user-group"></i> Patients</li>
+        <li onclick="goTo('add-patient.html')"><i class="fa-solid fa-user-plus"></i> Add Patient</li>
+        <li onclick="goTo('prediction.html')"><i class="fa-solid fa-brain"></i> Prediction</li>
+        <li onclick="goTo('upload.html')"><i class="fa-solid fa-upload"></i> Upload</li>
+        <li class="active" onclick="goTo('reports.html')"><i class="fa-solid fa-file-lines"></i> Reports</li>
+        <li onclick="goTo('audit.html')"><i class="fa-solid fa-shield-halved"></i> Audit Logs</li>
+    </ul>
+</div>
+
+<div class="main-content">
+
+    <div class="topbar">
+        <h1>Reports</h1>
+        <div class="top-actions">
+            <button><i class="fa-solid fa-bell"></i></button>
+            <button onclick="logout()">Logout</button>
+        </div>
+    </div>
+
+    <div class="card-container">
+
+        <div class="card blue-card">
+            <h3><i class="fa-solid fa-chart-pie"></i> Patient Risk Summary</h3>
+            <br>
+            <p>High / Medium / Low Risk Analysis</p>
+            <br>
+            <button onclick="alert('Patient Risk Report Generated')">Generate</button>
+        </div>
+
+        <div class="card green-card">
+            <h3><i class="fa-solid fa-chart-line"></i> Readmission Trends</h3>
+            <br>
+            <p>Monthly Readmission Trends</p>
+            <br>
+            <button onclick="alert('Trend Report Generated')">Generate</button>
+        </div>
+
+        <div class="card purple-card">
+            <h3><i class="fa-solid fa-clock-rotate-left"></i> Prediction History</h3>
+            <br>
+            <p>Prediction Logs and Results</p>
+            <br>
+            <button onclick="alert('Prediction History Generated')">Generate</button>
+        </div>
+
+    </div>
+
+</div>
+
+</div>
+
+<script src="JavaScript/script.js"></script>
+</body>
+</html>
