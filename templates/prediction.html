@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Patients - HealthAI</title>
+    <title>Prediction - HealthAI</title>
+
     <link rel="stylesheet" href="CSS/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 </head>
@@ -26,7 +27,7 @@ if(localStorage.getItem("loggedIn") !== "true"){
                 <i class="fa-solid fa-chart-line"></i> Dashboard
             </li>
 
-            <li class="active" onclick="goTo('patients.html')">
+            <li onclick="goTo('patients.html')">
                 <i class="fa-solid fa-user-group"></i> Patients
             </li>
 
@@ -34,7 +35,7 @@ if(localStorage.getItem("loggedIn") !== "true"){
                 <i class="fa-solid fa-user-plus"></i> Add Patient
             </li>
 
-            <li onclick="goTo('prediction.html')">
+            <li class="active" onclick="goTo('prediction.html')">
                 <i class="fa-solid fa-brain"></i> Prediction
             </li>
 
@@ -55,8 +56,9 @@ if(localStorage.getItem("loggedIn") !== "true"){
     <!-- Main Content -->
     <div class="main-content">
 
+        <!-- Topbar -->
         <div class="topbar">
-            <h1>Patients</h1>
+            <h1>Hospital Readmission Prediction</h1>
 
             <div class="top-actions">
                 <button><i class="fa-solid fa-bell"></i></button>
@@ -64,86 +66,88 @@ if(localStorage.getItem("loggedIn") !== "true"){
             </div>
         </div>
 
-        <div class="table-box">
+        <!-- Prediction Form -->
+        <div class="form-card">
 
-            <div class="search-box" style="margin-bottom:20px;">
-                <input type="text" placeholder="Search Patient by ID or Name...">
+            <h2>Patient Information</h2>
+            <br>
+
+            <div class="form-grid">
+
+                <input type="text" placeholder="Patient ID">
+
+                <input type="number" placeholder="Age">
+
+                <select>
+                    <option>Gender</option>
+                    <option>Male</option>
+                    <option>Female</option>
+                </select>
+
+                <input type="number" placeholder="BMI">
+
+                <input type="number" placeholder="Blood Pressure">
+
+                <input type="number" placeholder="Cholesterol">
+
+                <select>
+                    <option>Diabetes</option>
+                    <option>Yes</option>
+                    <option>No</option>
+                </select>
+
+                <select>
+                    <option>Hypertension</option>
+                    <option>Yes</option>
+                    <option>No</option>
+                </select>
+
+                <input type="number" placeholder="Medication Count">
+
+                <input type="number" placeholder="Length of Stay">
+
             </div>
 
+            <br>
+
+            <div class="top-actions">
+                <button onclick="showPrediction()">
+                    Predict Readmission Risk
+                </button>
+
+                <button onclick="goTo('reports.html')">
+                    View Reports
+                </button>
+            </div>
+
+        </div>
+
+        <br>
+
+        <!-- Prediction Result -->
+        <div class="table-box">
+
+            <h2>Prediction Result</h2>
+
+            <br>
+
             <table>
+
                 <tr>
                     <th>Patient ID</th>
-                    <th>Name</th>
-                    <th>Age</th>
-                    <th>Gender</th>
-                    <th>Diagnosis</th>
+                    <th>Risk Score</th>
                     <th>Risk Level</th>
-                    <th>Status</th>
-                    <th>Action</th>
+                    <th>Recommended Action</th>
                 </tr>
 
                 <tr>
-                    <td>P001</td>
-                    <td>John Smith</td>
-                    <td>65</td>
-                    <td>Male</td>
-                    <td>Heart Failure</td>
-                    <td><span class="high">High</span></td>
-                    <td>Admitted</td>
-                    <td>
-                        <button onclick="goTo('prediction.html')">View</button>
+                    <td id="pid">P001</td>
+                    <td id="score">85%</td>
+                    <td id="risk">
+                        <span class="high">High</span>
                     </td>
-                </tr>
-
-                <tr>
-                    <td>P002</td>
-                    <td>Mary Johnson</td>
-                    <td>58</td>
-                    <td>Female</td>
-                    <td>Diabetes</td>
-                    <td><span class="medium">Medium</span></td>
-                    <td>Discharged</td>
-                    <td>
-                        <button onclick="goTo('prediction.html')">View</button>
-                    </td>
-                </tr>
-
-                <tr>
-                    <td>P003</td>
-                    <td>Robert Davis</td>
-                    <td>71</td>
-                    <td>Male</td>
-                    <td>Hypertension</td>
-                    <td><span class="low">Low</span></td>
-                    <td>Observation</td>
-                    <td>
-                        <button onclick="goTo('prediction.html')">View</button>
-                    </td>
-                </tr>
-
-                <tr>
-                    <td>P004</td>
-                    <td>Emily Wilson</td>
-                    <td>46</td>
-                    <td>Female</td>
-                    <td>Asthma</td>
-                    <td><span class="medium">Medium</span></td>
-                    <td>Admitted</td>
-                    <td>
-                        <button onclick="goTo('prediction.html')">View</button>
-                    </td>
-                </tr>
-
-                <tr>
-                    <td>P005</td>
-                    <td>Michael Brown</td>
-                    <td>62</td>
-                    <td>Male</td>
-                    <td>Kidney Disease</td>
-                    <td><span class="high">High</span></td>
-                    <td>Critical Care</td>
-                    <td>
-                        <button onclick="goTo('prediction.html')">View</button>
+                    <td id="action">
+                        Schedule follow-up within 7 days and monitor closely.
                     </td>
                 </tr>
 
@@ -156,6 +160,37 @@ if(localStorage.getItem("loggedIn") !== "true"){
 </div>
 
 <script src="JavaScript/script.js"></script>
+
+<script>
+function showPrediction(){
+
+    const scores = [
+        {
+            score:"92%",
+            risk:"<span class='high'>High</span>",
+            action:"Immediate follow-up, medication review and continuous monitoring."
+        },
+
+        {
+            score:"67%",
+            risk:"<span class='medium'>Medium</span>",
+            action:"Schedule follow-up within 14 days."
+        },
+
+        {
+            score:"28%",
+            risk:"<span class='low'>Low</span>",
+            action:"Routine discharge and regular check-up."
+        }
+    ];
+
+    const result = scores[Math.floor(Math.random()*scores.length)];
+
+    document.getElementById("score").innerHTML = result.score;
+    document.getElementById("risk").innerHTML = result.risk;
+    document.getElementById("action").innerHTML = result.action;
+}
+</script>
 
 </body>
 </html>
