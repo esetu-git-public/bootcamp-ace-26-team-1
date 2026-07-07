@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{% block title %}{{ app_name }}{% endblock %} · ReAdmitIQ</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/static/css/style.css">
+{% block extra_css %}{% endblock %}
+</head>
+<body>
+<div class="app-shell">
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <span class="brand-mark">
+        <svg viewBox="0 0 40 24" class="pulse-mark" aria-hidden="true">
+          <polyline points="0,12 9,12 12,3 16,21 20,12 40,12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </span>
+      <span class="brand-word">ReAdmit<em>IQ</em></span>
+    </div>
+
+    <nav class="sidebar-nav">
+      <a href="/dashboard" class="nav-item" data-page="dashboard">
+        <span class="nav-eyebrow">01</span> Overview
+      </a>
+      <a href="/patients" class="nav-item" data-page="patients">
+        <span class="nav-eyebrow">02</span> Patient Registry
+      </a>
+      <a href="/prediction" class="nav-item" data-page="prediction">
+        <span class="nav-eyebrow">03</span> Risk Prediction
+      </a>
+      <a href="/reports" class="nav-item" data-page="reports">
+        <span class="nav-eyebrow">04</span> Reports
+      </a>
+      <a href="/audit" class="nav-item" data-page="audit">
+        <span class="nav-eyebrow">05</span> Audit Trail
+      </a>
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="user-chip">
+        <div class="user-avatar" id="userAvatar">--</div>
+        <div class="user-meta">
+          <div class="user-name" id="userName">Loading…</div>
+          <div class="user-role" id="userRole">—</div>
+        </div>
+      </div>
+      <button class="btn-ghost btn-block" id="logoutBtn">Sign out</button>
+    </div>
+  </aside>
+
+  <div class="main-col">
+    <header class="topbar">
+      <div class="topbar-title">
+        <h1>{% block page_title %}Overview{% endblock %}</h1>
+        <p class="topbar-sub">{% block page_sub %}30-day readmission risk, at a glance{% endblock %}</p>
+      </div>
+      <div class="topbar-actions">{% block topbar_actions %}{% endblock %}</div>
+    </header>
+    <main class="content">
+      {% block content %}{% endblock %}
+    </main>
+  </div>
+</div>
+
+<script src="/static/js/auth-guard.js"></script>
+{% block extra_js %}{% endblock %}
+</body>
+</html>
