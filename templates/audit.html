@@ -1,3 +1,9 @@
+{% extends "base.html" %}
+{% block title %}Audit Trail{% endblock %}
+{% block page_title %}Audit Trail{% endblock %}
+{% block page_sub %}Every login, prediction, and data change, logged{% endblock %}
+
+{% block content %}
 <div class="card">
   <div class="card-header">
     <span class="card-title">Recent activity</span>
@@ -11,9 +17,11 @@
   </div>
   <div class="empty-state" id="auditEmpty" style="display:none;">
     <div class="icon">📋</div>
-   
+    No activity recorded yet.
   </div>
 </div>
+{% endblock %}
 
+{% block extra_js %}
 <script src="/static/js/audit.js"></script>
-
+{% endblock %}
