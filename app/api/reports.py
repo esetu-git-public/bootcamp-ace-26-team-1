@@ -21,3 +21,12 @@ def export_patients(user: dict = Depends(get_current_user)):
         content=csv_bytes, media_type="text/csv",
         headers={"Content-Disposition": "attachment; filename=patients_export.csv"},
     )
+
+@router.get("/export/predictions")
+def export_predictions(user: dict = Depends(get_current_user)):
+    csv_bytes = report_service.export_predictions_csv()
+    log_action(actor=user["email"], action="export_predictions_csv")
+    return Response(
+        content=csv_bytes, media_type="text/csv",
+        headers={"Content-Disposition": "attachment; filename=predictions_export.csv"},
+    )
