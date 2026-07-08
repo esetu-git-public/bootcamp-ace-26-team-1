@@ -1,5 +1,12 @@
-fastapi
-uvicorn
-sqlalchemy
-psycopg2-binary
-python-dotenv
+# Web Framework
+fastapi>=0.100.0
+uvicorn>=0.23.0
+
+# Environment Variables
+python-dotenv>=1.0.0
+
+# Supabase REST Client
+httpx>=0.25.0
+
+# Security & Authentication
+passlib[bcrypt]>=1.7.4
