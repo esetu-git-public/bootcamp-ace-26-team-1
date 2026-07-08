@@ -1,1 +1,19 @@
+<div class="card">
+  <div class="card-header">
+    <span class="card-title">Recent activity</span>
+    <button class="btn btn-ghost btn-sm" id="refreshBtn">↻ Refresh</button>
+  </div>
+  <div class="table-wrap">
+    <table class="data-table">
+      <thead><tr><th>Actor</th><th>Action</th><th>Details</th><th>Timestamp</th></tr></thead>
+      <tbody id="auditBody"></tbody>
+    </table>
+  </div>
+  <div class="empty-state" id="auditEmpty" style="display:none;">
+    <div class="icon">📋</div>
+   
+  </div>
+</div>
+
+<script src="/static/js/audit.js"></script>
 
