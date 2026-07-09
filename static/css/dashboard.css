@@ -1,0 +1,10 @@
+.chart-card canvas{ max-width:100%; }
+.mini-legend{ display:flex; gap:16px; flex-wrap:wrap; margin-top:12px; }
+.mini-legend .item{ display:flex; align-items:center; gap:6px; font-size:12px; color: var(--text-muted); }
+.mini-legend .dot{ width:9px; height:9px; border-radius:50%; }
+
+.importance-row{ display:flex; align-items:center; gap:12px; margin-bottom:10px; }
+.importance-label{ width:130px; font-size:12.5px; color: var(--text-muted); flex-shrink:0; }
+.importance-bar-track{ flex:1; height:8px; background: var(--ink); border-radius:99px; overflow:hidden; }
+.importance-bar-fill{ height:100%; background: var(--signal); border-radius:99px; }
+.importance-value{ width:44px; text-align:right; font-family: var(--font-mono); font-size:12px; color: var(--text-dim); }

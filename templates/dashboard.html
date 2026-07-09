@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+{% block title %}Overview{% endblock %}
+{% block page_title %}Overview{% endblock %}
+{% block page_sub %}30-day readmission risk, at a glance{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="/static/css/dashboard.css">{% endblock %}
+
+{% block topbar_actions %}
+<a href="/prediction" class="btn btn-primary">+ Score a patient</a>
+{% endblock %}
+
+{% block content %}
+<div class="stat-grid" id="statGrid">
+  <div class="stat-card">
+    <span class="card-eyebrow">Patients on file</span>
+    <div class="stat-value mono" id="statTotal">—</div>
+    <div class="stat-delta">Across all discharges recorded</div>
+  </div>
+  <div class="stat-card">
+    <span class="card-eyebrow">30-day readmission rate</span>
+    <div class="stat-value mono risk-high" id="statRate">—</div>
+    <div class="stat-delta" id="statRateDetail">—</div>
+  </div>
+  <div class="stat-card">
+    <span class="card-eyebrow">Avg. length of stay</span>
+    <div class="stat-value mono" id="statLos">—</div>
+    <div class="stat-delta">Days per admission</div>
+  </div>
+  <div class="stat-card">
+    <span class="card-eyebrow">Predictions run</span>
+    <div class="stat-value mono risk-low" id="statPredictions">—</div>
+    <div class="stat-delta" id="statPredictionsDetail">—</div>
+  </div>
+</div>
+
+<div class="grid-2">
+  <div class="card chart-card">
+    <div class="card-header">
+      <span class="card-title">Discharge destination mix</span>
+    </div>
+    <canvas id="destinationChart" height="220"></canvas>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">Model feature importance</span>
+    </div>
+    <div id="importanceList"></div>
+  </div>
+</div>
+
+<div class="grid-2" style="margin-top:16px;">
+  <div class="card chart-card">
+    <div class="card-header">
+      <span class="card-title">Patients by gender</span>
+    </div>
+    <canvas id="genderChart" height="200"></canvas>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">Recent risk scores</span>
+      <a href="/prediction" class="btn btn-ghost btn-sm">Run new</a>
+    </div>
+    <div class="table-wrap">
+      <table class="data-table" id="recentPredictionsTable">
+        <thead><tr><th>Patient</th><th>Risk</th><th>Score</th><th>When</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+    <div class="empty-state" id="predictionsEmpty" style="display:none;">
+      <div class="icon">◎</div>
+      No predictions yet. <a href="/prediction" style="color:var(--signal);">Score your first patient →</a>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js"></script>
+<script src="/static/js/dashboard.js"></script>
+{% endblock %}
