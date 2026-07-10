@@ -23,23 +23,21 @@ def test_predict_single_success():
         result = predict_single(patient, created_by="doctor@test.com")
 
         assert result == expected_result
-
         mock_predict.assert_called_once_with(patient)
-
         mock_db.assert_called_once()
 
 
-def test_predict_single_low_risk():
+def test_predict_single_high_risk():
 
     patient = {
         "patient_id": 2,
-        "age": 35,
-        "gender": "Female"
+        "age": 72,
+        "gender": "Male"
     }
 
     expected_result = {
-        "risk_score": 0.20,
-        "risk_label": "Low Risk"
+        "risk_score": 0.95,
+        "risk_label": "High Risk"
     }
 
     with patch("app.services.prediction_service.predictor.predict_one") as mock_predict, \
@@ -49,16 +47,17 @@ def test_predict_single_low_risk():
 
         result = predict_single(patient, created_by="doctor@test.com")
 
-        assert result["risk_label"] == "Low Risk"
-
+        assert result["risk_label"] == "High Risk"
+        mock_predict.assert_called_once_with(patient)
         mock_db.assert_called_once()
 
 
-def test_predict_single_without_patient_id():
+def test_predict_single_medium_risk():
 
     patient = {
+        "patient_id": 3,
         "age": 50,
-        "gender": "Male"
+        "gender": "Female"
     }
 
     expected_result = {
@@ -74,15 +73,65 @@ def test_predict_single_without_patient_id():
         result = predict_single(patient, created_by="doctor@test.com")
 
         assert result["risk_label"] == "Medium Risk"
+        mock_predict.assert_called_once_with(patient)
+        mock_db.assert_called_once()
 
+
+def test_predict_single_low_risk():
+
+    patient = {
+        "patient_id": 4,
+        "age": 25,
+        "gender": "Female"
+    }
+
+    expected_result = {
+        "risk_score": 0.15,
+        "risk_label": "Low Risk"
+    }
+
+    with patch("app.services.prediction_service.predictor.predict_one") as mock_predict, \
+         patch("app.services.prediction_service.db.insert_prediction") as mock_db:
+
+        mock_predict.return_value = expected_result
+
+        result = predict_single(patient, created_by="doctor@test.com")
+
+        assert result["risk_label"] == "Low Risk"
+        mock_predict.assert_called_once_with(patient)
+        mock_db.assert_called_once()
+
+
+def test_predict_single_without_patient_id():
+
+    patient = {
+        "age": 45,
+        "gender": "Male"
+    }
+
+    expected_result = {
+        "risk_score": 0.30,
+        "risk_label": "Low Risk"
+    }
+
+    with patch("app.services.prediction_service.predictor.predict_one") as mock_predict, \
+         patch("app.services.prediction_service.db.insert_prediction") as mock_db:
+
+        mock_predict.return_value = expected_result
+
+        result = predict_single(patient, created_by="doctor@test.com")
+
+        assert result["risk_label"] == "Low Risk"
+        mock_predict.assert_called_once_with(patient)
         mock_db.assert_called_once()
 
 
 def test_predict_single_prediction_exception():
 
     patient = {
-        "patient_id": 1,
-        "age": 65
+        "patient_id": 5,
+        "age": 65,
+        "gender": "Male"
     }
 
     with patch("app.services.prediction_service.predictor.predict_one") as mock_predict:
