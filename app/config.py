@@ -1,3 +1,4 @@
+import os
 from pydantic_settings import BaseSettings
 from functools import lru_cache
 
@@ -16,6 +17,11 @@ class Settings(BaseSettings):
     supabase_jwt_secret: str = ""
 
     local_db_path: str = "./local_fallback.db"
+
+    def __init__(self, **values):
+        super().__init__(**values)
+        if os.getenv("LOCAL_DB_PATH"):
+            self.local_db_path = os.getenv("LOCAL_DB_PATH")
 
     cors_origins: str = "http://localhost:8000,http://127.0.0.1:8000"
 
