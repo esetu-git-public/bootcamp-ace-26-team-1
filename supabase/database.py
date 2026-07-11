@@ -12,10 +12,11 @@ import time
 from contextlib import contextmanager
 from typing import Optional
 
-from supabase.client import get_supabase
+from supabase.client import SupabaseUnavailable, get_supabase
 from app.config import get_settings
 
 settings = get_settings()
+DB_PATH = settings.local_db_path
 
 
 # --------------------------------------------------------------------------
@@ -23,7 +24,7 @@ settings = get_settings()
 # --------------------------------------------------------------------------
 @contextmanager
 def _conn():
-    conn = sqlite3.connect(settings.local_db_path)
+    conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
     try:
         yield conn
@@ -92,8 +93,11 @@ init_local_db()
 def get_user_by_email(email: str) -> Optional[dict]:
     sb = get_supabase()
     if sb:
-        rows = sb.select("users", {"email": f"eq.{email}", "limit": 1})
-        return rows[0] if rows else None
+        try:
+            rows = sb.select("users", {"email": f"eq.{email}", "limit": 1})
+            return rows[0] if rows else None
+        except SupabaseUnavailable:
+            pass
     with _conn() as conn:
         row = conn.execute("SELECT * FROM users WHERE email = ?", (email,)).fetchone()
         return dict(row) if row else None
@@ -106,13 +110,27 @@ def create_user(user_id: str, email: str, full_name: str, role: str, password_ha
     }
     sb = get_supabase()
     if sb:
-        sb.insert("users", record)
-        return record
+        try:
+            sb.insert("users", record)
+            return record
+        except SupabaseUnavailable:
+            pass
     with _conn() as conn:
+        existing = conn.execute("SELECT id FROM users WHERE email = ?", (email,)).fetchone()
+        if existing:
+            return {
+                **record,
+                "id": existing["id"],
+                "password_hash": password_hash,
+            }
+        candidate_id = user_id
+        while conn.execute("SELECT 1 FROM users WHERE id = ?", (candidate_id,)).fetchone():
+            candidate_id = f"{user_id}-{int(time.time() * 1000)}"
         conn.execute(
             "INSERT INTO users (id, email, full_name, role, password_hash, created_at) VALUES (?,?,?,?,?,?)",
-            (user_id, email, full_name, role, password_hash, record["created_at"]),
+            (candidate_id, email, full_name, role, password_hash, record["created_at"]),
         )
+        record["id"] = candidate_id
     return record
 
 
@@ -120,10 +138,13 @@ def create_user(user_id: str, email: str, full_name: str, role: str, password_ha
 def list_patients(limit: int = 100, offset: int = 0, search: str = "") -> list:
     sb = get_supabase()
     if sb:
-        params = {"order": "id.desc", "limit": limit, "offset": offset}
-        if search:
-            params["gender"] = f"ilike.*{search}*"
-        return sb.select("patients", params)
+        try:
+            params = {"order": "id.desc", "limit": limit, "offset": offset}
+            if search:
+                params["gender"] = f"ilike.*{search}*"
+            return sb.select("patients", params)
+        except SupabaseUnavailable:
+            pass
     with _conn() as conn:
         if search:
             rows = conn.execute(
@@ -141,7 +162,10 @@ def list_patients(limit: int = 100, offset: int = 0, search: str = "") -> list:
 def count_patients() -> int:
     sb = get_supabase()
     if sb:
-        return sb.count("patients")
+        try:
+            return sb.count("patients")
+        except SupabaseUnavailable:
+            pass
     with _conn() as conn:
         row = conn.execute("SELECT COUNT(*) as c FROM patients").fetchone()
         return row["c"]
@@ -151,8 +175,11 @@ def insert_patient(record: dict, created_by: str = "") -> dict:
     record = {**record, "created_by": created_by, "created_at": time.time()}
     sb = get_supabase()
     if sb:
-        result = sb.insert("patients", record)
-        return result[0] if result else record
+        try:
+            result = sb.insert("patients", record)
+            return result[0] if result else record
+        except SupabaseUnavailable:
+            pass
     with _conn() as conn:
         cur = conn.execute(
             """INSERT INTO patients
@@ -176,13 +203,16 @@ def bulk_insert_patients(records: list, created_by: str = "") -> int:
     sb = get_supabase()
     now = time.time()
     if sb:
-        payload = [{**r, "created_by": created_by, "created_at": now} for r in records]
-        CHUNK = 500
-        total = 0
-        for i in range(0, len(payload), CHUNK):
-            sb.insert("patients", payload[i:i + CHUNK])
-            total += len(payload[i:i + CHUNK])
-        return total
+        try:
+            payload = [{**r, "created_by": created_by, "created_at": now} for r in records]
+            CHUNK = 500
+            total = 0
+            for i in range(0, len(payload), CHUNK):
+                sb.insert("patients", payload[i:i + CHUNK])
+                total += len(payload[i:i + CHUNK])
+            return total
+        except SupabaseUnavailable:
+            pass
     with _conn() as conn:
         conn.executemany(
             """INSERT INTO patients
@@ -208,12 +238,17 @@ def get_patient_stats() -> dict:
     """Aggregate stats used by the dashboard."""
     sb = get_supabase()
     if sb:
-        all_rows = sb.select("patients", {
-            "select": "age,gender,diabetes,hypertension,discharge_destination,"
-                      "readmitted_30_days,length_of_stay",
-            "limit": 100000,
-        })
+        try:
+            all_rows = sb.select("patients", {
+                "select": "age,gender,diabetes,hypertension,discharge_destination,"
+                          "readmitted_30_days,length_of_stay",
+                "limit": 100000,
+            })
+        except SupabaseUnavailable:
+            all_rows = []
     else:
+        all_rows = []
+    if not all_rows:
         with _conn() as conn:
             all_rows = [dict(r) for r in conn.execute(
                 "SELECT age,gender,diabetes,hypertension,discharge_destination,"
@@ -248,8 +283,11 @@ def insert_prediction(patient_ref, risk_score, risk_label, input_payload: dict, 
     }
     sb = get_supabase()
     if sb:
-        result = sb.insert("predictions", record)
-        return result[0] if result else record
+        try:
+            result = sb.insert("predictions", record)
+            return result[0] if result else record
+        except SupabaseUnavailable:
+            pass
     with _conn() as conn:
         cur = conn.execute(
             "INSERT INTO predictions (patient_ref, risk_score, risk_label, input_payload, created_by, created_at) "
@@ -263,7 +301,10 @@ def insert_prediction(patient_ref, risk_score, risk_label, input_payload: dict, 
 def list_predictions(limit: int = 50) -> list:
     sb = get_supabase()
     if sb:
-        return sb.select("predictions", {"order": "id.desc", "limit": limit})
+        try:
+            return sb.select("predictions", {"order": "id.desc", "limit": limit})
+        except SupabaseUnavailable:
+            pass
     with _conn() as conn:
         rows = conn.execute(
             "SELECT * FROM predictions ORDER BY id DESC LIMIT ?", (limit,)
@@ -276,8 +317,11 @@ def insert_audit_log(actor: str, action: str, details: str = "") -> dict:
     record = {"actor": actor, "action": action, "details": details, "created_at": time.time()}
     sb = get_supabase()
     if sb:
-        result = sb.insert("audit_logs", record)
-        return result[0] if result else record
+        try:
+            result = sb.insert("audit_logs", record)
+            return result[0] if result else record
+        except SupabaseUnavailable:
+            pass
     with _conn() as conn:
         cur = conn.execute(
             "INSERT INTO audit_logs (actor, action, details, created_at) VALUES (?,?,?,?)",
@@ -290,7 +334,10 @@ def insert_audit_log(actor: str, action: str, details: str = "") -> dict:
 def list_audit_logs(limit: int = 200) -> list:
     sb = get_supabase()
     if sb:
-        return sb.select("audit_logs", {"order": "id.desc", "limit": limit})
+        try:
+            return sb.select("audit_logs", {"order": "id.desc", "limit": limit})
+        except SupabaseUnavailable:
+            pass
     with _conn() as conn:
         rows = conn.execute(
             "SELECT * FROM audit_logs ORDER BY id DESC LIMIT ?", (limit,)

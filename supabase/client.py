@@ -20,6 +20,10 @@ from app.config import get_settings
 settings = get_settings()
 
 
+class SupabaseUnavailable(RuntimeError):
+    """Raised when the configured Supabase service is unavailable."""
+
+
 class SupabaseREST:
     """Minimal PostgREST + GoTrue (Auth) client, just enough for this app."""
 
@@ -34,39 +38,50 @@ class SupabaseREST:
             "Content-Type": "application/json",
         }
 
+    def _request(self, method, url: str, **kwargs):
+        try:
+            response = method(url, **kwargs)
+            response.raise_for_status()
+            return response
+        except (httpx.HTTPStatusError, httpx.TimeoutException, httpx.RequestError) as exc:
+            raise SupabaseUnavailable(str(exc)) from exc
+
     # ---- table (PostgREST) helpers ----
     def select(self, table: str, params: dict | None = None) -> list:
-        r = httpx.get(f"{self.rest_base}/{table}", headers=self.headers, params=params or {}, timeout=10)
-        r.raise_for_status()
-        return r.json()
+        response = self._request(httpx.get, f"{self.rest_base}/{table}", headers=self.headers, params=params or {}, timeout=10)
+        return response.json()
 
     def insert(self, table: str, records: list | dict) -> list:
         headers = {**self.headers, "Prefer": "return=representation"}
-        r = httpx.post(f"{self.rest_base}/{table}", headers=headers, json=records, timeout=10)
-        r.raise_for_status()
-        return r.json()
+        response = self._request(httpx.post, f"{self.rest_base}/{table}", headers=headers, json=records, timeout=10)
+        return response.json()
 
     def count(self, table: str, params: dict | None = None) -> int:
         headers = {**self.headers, "Prefer": "count=exact"}
-        r = httpx.head(f"{self.rest_base}/{table}", headers=headers, params=params or {}, timeout=10)
-        r.raise_for_status()
-        content_range = r.headers.get("content-range", "0")
+        response = self._request(httpx.head, f"{self.rest_base}/{table}", headers=headers, params=params or {}, timeout=10)
+        content_range = response.headers.get("content-range", "0")
         return int(content_range.split("/")[-1]) if "/" in content_range else 0
 
     # ---- auth (GoTrue) helpers ----
     def auth_sign_up(self, email: str, password: str) -> dict:
-        r = httpx.post(f"{self.auth_base}/signup", headers=self.headers,
-                        json={"email": email, "password": password}, timeout=10)
-        r.raise_for_status()
-        return r.json()
+        response = self._request(
+            httpx.post,
+            f"{self.auth_base}/signup",
+            headers=self.headers,
+            json={"email": email, "password": password},
+            timeout=10,
+        )
+        return response.json()
 
     def auth_sign_in(self, email: str, password: str) -> dict:
-        r = httpx.post(
-            f"{self.auth_base}/token?grant_type=password", headers=self.headers,
-            json={"email": email, "password": password}, timeout=10,
+        response = self._request(
+            httpx.post,
+            f"{self.auth_base}/token?grant_type=password",
+            headers=self.headers,
+            json={"email": email, "password": password},
+            timeout=10,
         )
-        r.raise_for_status()
-        return r.json()
+        return response.json()
 
     # ---- storage helpers ----
     def storage_upload(self, bucket: str, path: str, content: bytes) -> str:
