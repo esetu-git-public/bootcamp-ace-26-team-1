@@ -30,3 +30,17 @@ joblib==1.4.2
 
 # Document Generation (PDFs)
 reportlab==4.2.2
+
+#Testing
+pytest>=8.0.0
+pytest-httpx>=0.30.0
+
+#model
+pandas
+numpy
+scikit-learn
+imbalanced-learn
+xgboost
+joblib
+matplotlib
+seaborn
