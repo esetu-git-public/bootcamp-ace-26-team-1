@@ -37,27 +37,31 @@
     });
   }
 
-  window.ReAdmitIQ = {
-    token,
-    user,
-    authHeaders(isFormData) {
-      const headers = { 'Authorization': `Bearer ${token}` };
-      if (!isFormData) headers['Content-Type'] = 'application/json';
-      return headers;
-    },
-    async api(path, options = {}) {
-      const isFormData = options.body instanceof FormData;
-      const res = await fetch(path, {
-        ...options,
-        headers: { ...this.authHeaders(isFormData), ...(options.headers || {}) },
-      });
-      if (res.status === 401) {
-        localStorage.removeItem('readmitiq_token');
-        localStorage.removeItem('readmitiq_user');
-        window.location.href = '/login';
-        return null;
-      }
-      return res;
-    },
-  };
+  // Defined as plain functions in this closure (not object methods) so that
+  // destructuring them off window.ReAdmitIQ -- e.g. `const { api } = window.ReAdmitIQ`
+  // -- still works correctly. Methods that use `this` break when called that
+  // way, since the caller loses track of what `this` should be; these don't
+  // rely on `this` at all, they just close over `token` directly.
+  function authHeaders(isFormData) {
+    const headers = { 'Authorization': `Bearer ${token}` };
+    if (!isFormData) headers['Content-Type'] = 'application/json';
+    return headers;
+  }
+
+  async function api(path, options = {}) {
+    const isFormData = options.body instanceof FormData;
+    const res = await fetch(path, {
+      ...options,
+      headers: { ...authHeaders(isFormData), ...(options.headers || {}) },
+    });
+    if (res.status === 401) {
+      localStorage.removeItem('readmitiq_token');
+      localStorage.removeItem('readmitiq_user');
+      window.location.href = '/login';
+      return null;
+    }
+    return res;
+  }
+
+  window.ReAdmitIQ = { token, user, authHeaders, api };
 })();
