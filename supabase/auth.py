@@ -21,6 +21,8 @@ def verify_password(password: str, password_hash: str) -> bool:
 
 
 def sign_up(email: str, password: str, full_name: str, role: str = "clinician") -> dict:
+    if db.get_user_by_email(email):
+        raise ValueError("A user with that email already exists")
     sb = get_supabase()
     if sb:
         try:

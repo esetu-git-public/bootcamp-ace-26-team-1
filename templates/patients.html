@@ -1,161 +1,107 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Patients - HealthAI</title>
-    <link rel="stylesheet" href="CSS/style.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-</head>
-<body>
+{% extends "base.html" %}
+{% block title %}Patient Registry{% endblock %}
+{% block page_title %}Patient Registry{% endblock %}
+{% block page_sub %}Browse, search, and import discharge records{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="/static/css/patients.css">{% endblock %}
 
-<script>
-if(localStorage.getItem("loggedIn") !== "true"){
-    window.location.href = "index.html";
-}
-</script>
+{% block topbar_actions %}
+<button class="btn btn-ghost" id="uploadBtn">Import CSV</button>
+<button class="btn btn-primary" id="addPatientBtn">+ Add patient</button>
+{% endblock %}
 
-<div class="wrapper">
-
-    <!-- Sidebar -->
-    <div class="sidebar">
-        <h2><i class="fa-solid fa-hospital"></i> HealthAI</h2>
-
-        <ul>
-            <li onclick="goTo('dashboard.html')">
-                <i class="fa-solid fa-chart-line"></i> Dashboard
-            </li>
-
-            <li class="active" onclick="goTo('patients.html')">
-                <i class="fa-solid fa-user-group"></i> Patients
-            </li>
-
-            <li onclick="goTo('add-patient.html')">
-                <i class="fa-solid fa-user-plus"></i> Add Patient
-            </li>
-
-            <li onclick="goTo('prediction.html')">
-                <i class="fa-solid fa-brain"></i> Prediction
-            </li>
-
-            <li onclick="goTo('upload.html')">
-                <i class="fa-solid fa-upload"></i> Upload
-            </li>
-
-            <li onclick="goTo('reports.html')">
-                <i class="fa-solid fa-file-lines"></i> Reports
-            </li>
-
-            <li onclick="goTo('audit.html')">
-                <i class="fa-solid fa-shield-halved"></i> Audit Logs
-            </li>
-        </ul>
+{% block content %}
+<div class="card" style="margin-bottom:16px;">
+  <div class="upload-zone" id="uploadPanel" style="display:none;">
+    <span>📄</span>
+    <div style="flex:1;">
+      <div style="color:var(--text); font-weight:600; font-size:13px; margin-bottom:2px;">Import patients from CSV</div>
+      <div>Expected columns: patient_id, age, gender, blood_pressure, cholesterol, bmi, diabetes, hypertension, medication_count, length_of_stay, discharge_destination</div>
+      <input type="file" id="csvInput" accept=".csv" style="margin-top:8px;">
     </div>
-
-    <!-- Main Content -->
-    <div class="main-content">
-
-        <div class="topbar">
-            <h1>Patients</h1>
-
-            <div class="top-actions">
-                <button><i class="fa-solid fa-bell"></i></button>
-                <button onclick="logout()">Logout</button>
-            </div>
-        </div>
-
-        <div class="table-box">
-
-            <div class="search-box" style="margin-bottom:20px;">
-                <input type="text" placeholder="Search Patient by ID or Name...">
-            </div>
-
-            <table>
-                <tr>
-                    <th>Patient ID</th>
-                    <th>Name</th>
-                    <th>Age</th>
-                    <th>Gender</th>
-                    <th>Diagnosis</th>
-                    <th>Risk Level</th>
-                    <th>Status</th>
-                    <th>Action</th>
-                </tr>
-
-                <tr>
-                    <td>P001</td>
-                    <td>John Smith</td>
-                    <td>65</td>
-                    <td>Male</td>
-                    <td>Heart Failure</td>
-                    <td><span class="high">High</span></td>
-                    <td>Admitted</td>
-                    <td>
-                        <button onclick="goTo('prediction.html')">View</button>
-                    </td>
-                </tr>
-
-                <tr>
-                    <td>P002</td>
-                    <td>Mary Johnson</td>
-                    <td>58</td>
-                    <td>Female</td>
-                    <td>Diabetes</td>
-                    <td><span class="medium">Medium</span></td>
-                    <td>Discharged</td>
-                    <td>
-                        <button onclick="goTo('prediction.html')">View</button>
-                    </td>
-                </tr>
-
-                <tr>
-                    <td>P003</td>
-                    <td>Robert Davis</td>
-                    <td>71</td>
-                    <td>Male</td>
-                    <td>Hypertension</td>
-                    <td><span class="low">Low</span></td>
-                    <td>Observation</td>
-                    <td>
-                        <button onclick="goTo('prediction.html')">View</button>
-                    </td>
-                </tr>
-
-                <tr>
-                    <td>P004</td>
-                    <td>Emily Wilson</td>
-                    <td>46</td>
-                    <td>Female</td>
-                    <td>Asthma</td>
-                    <td><span class="medium">Medium</span></td>
-                    <td>Admitted</td>
-                    <td>
-                        <button onclick="goTo('prediction.html')">View</button>
-                    </td>
-                </tr>
-
-                <tr>
-                    <td>P005</td>
-                    <td>Michael Brown</td>
-                    <td>62</td>
-                    <td>Male</td>
-                    <td>Kidney Disease</td>
-                    <td><span class="high">High</span></td>
-                    <td>Critical Care</td>
-                    <td>
-                        <button onclick="goTo('prediction.html')">View</button>
-                    </td>
-                </tr>
-
-            </table>
-
-        </div>
-
-    </div>
-
+    <button class="btn btn-primary btn-sm" id="csvSubmitBtn">Upload</button>
+  </div>
+  <div id="uploadResult" class="hint"></div>
 </div>
 
-<script src="JavaScript/script.js"></script>
+<div class="card">
+  <div class="toolbar">
+    <input type="text" class="search-input" id="searchInput" placeholder="Search by patient ID or gender…">
+    <span class="hint" id="resultCount"></span>
+  </div>
 
-</body>
-</html>
+  <div class="table-wrap">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>ID</th><th>Age</th><th>Gender</th><th>BP</th><th>Cholesterol</th><th>BMI</th>
+          <th>Diabetes</th><th>Hypertension</th><th>Meds</th><th>LOS (days)</th><th>Destination</th><th>Readmitted</th>
+        </tr>
+      </thead>
+      <tbody id="patientsBody"></tbody>
+    </table>
+  </div>
+  <div class="empty-state" id="patientsEmpty" style="display:none;">
+    <div class="icon">🗂️</div>
+    No patient records yet. Import a CSV or add one manually.
+  </div>
+
+  <div class="pagination" id="pagination">
+    <span id="pageInfo"></span>
+    <div class="controls">
+      <button class="btn btn-ghost btn-sm" id="prevPageBtn">← Prev</button>
+      <button class="btn btn-ghost btn-sm" id="nextPageBtn">Next →</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add patient modal -->
+<div class="modal-backdrop" id="addModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>Add patient record</h3>
+      <button class="modal-close" id="closeModalBtn">✕</button>
+    </div>
+    <div class="error-banner" id="addError"></div>
+    <form id="addPatientForm">
+      <div class="field-row">
+        <div class="field"><label>Patient ID</label><input type="number" id="f_patient_id" placeholder="Optional"></div>
+        <div class="field"><label>Age</label><input type="number" id="f_age" required min="0" max="120"></div>
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label>Gender</label>
+          <select id="f_gender"><option>Male</option><option>Female</option><option>Other</option></select>
+        </div>
+        <div class="field"><label>Blood pressure</label><input type="text" id="f_bp" placeholder="120/80" required></div>
+      </div>
+      <div class="field-row">
+        <div class="field"><label>Cholesterol</label><input type="number" id="f_cholesterol" required></div>
+        <div class="field"><label>BMI</label><input type="number" step="0.1" id="f_bmi" required></div>
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label>Diabetes</label>
+          <select id="f_diabetes"><option>No</option><option>Yes</option></select>
+        </div>
+        <div class="field">
+          <label>Hypertension</label>
+          <select id="f_hypertension"><option>No</option><option>Yes</option></select>
+        </div>
+      </div>
+      <div class="field-row">
+        <div class="field"><label>Medication count</label><input type="number" id="f_meds" required min="0"></div>
+        <div class="field"><label>Length of stay (days)</label><input type="number" id="f_los" required min="1"></div>
+      </div>
+      <div class="field">
+        <label>Discharge destination</label>
+        <select id="f_destination"><option>Home</option><option>Rehab</option><option>Nursing_Facility</option></select>
+      </div>
+      <button type="submit" class="btn btn-primary btn-block" id="saveBtn">Save patient</button>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="/static/js/patients.js"></script>
+{% endblock %}
