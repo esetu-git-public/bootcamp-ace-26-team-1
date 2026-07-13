@@ -1,55 +1,60 @@
-from fastapi import APIRouter, Depends, UploadFile, File, Query, HTTPException
-from pydantic import BaseModel
+from fastapi import APIRouter, HTTPException, Depends, Query
+from pydantic import BaseModel, Field
+from typing import Optional
 
-from app.services import patient_service
 from app.services.audit_service import log_action
 from app.dependencies import get_current_user
+from supabase import database as db  # <-- Using your custom wrapper!
 
 router = APIRouter(prefix="/api/patients", tags=["patients"])
 
-
-class PatientIn(BaseModel):
-    patient_id: int | None = None
-    age: int
+class PatientCreate(BaseModel):
+    patient_id: int
+    age: int = Field(..., ge=0)
     gender: str
-    blood_pressure: str
-    cholesterol: int
-    bmi: float
-    diabetes: str
-    hypertension: str
-    medication_count: int
-    length_of_stay: int
-    discharge_destination: str
-    readmitted_30_days: str | None = None
+    blood_pressure: Optional[str] = None
+    cholesterol: Optional[int] = None
+    bmi: Optional[float] = None
+    diabetes: Optional[str] = None
+    hypertension: Optional[str] = None
+    medication_count: Optional[int] = None
+    length_of_stay: Optional[int] = None
+    discharge_destination: Optional[str] = None
+    readmitted_30_days: Optional[str] = None
 
+@router.post("/")
+def create_patient(payload: PatientCreate, user: dict = Depends(get_current_user)):
+    # 1. Check for duplicates using your wrapper's search function
+    existing_patients = db.list_patients(limit=1000)
+    if any(p.get("patient_id") == payload.patient_id for p in existing_patients):
+        raise HTTPException(status_code=400, detail="Patient ID already exists")
 
-@router.get("")
-def list_patients(
-    page: int = Query(1, ge=1),
-    page_size: int = Query(20, ge=1, le=200),
-    search: str = Query(""),
-    user: dict = Depends(get_current_user),
+    # 2. Insert using your custom wrapper
+    data = payload.model_dump()
+    result = db.insert_patient(data, created_by=user.get("email", "unknown"))
+    
+    log_action(actor=user.get("email"), action="create_patient", details=f"patient_id={payload.patient_id}")
+    return result
+
+@router.get("/")
+def get_patients(
+    page: int = Query(1, ge=1), 
+    page_size: int = Query(50, ge=1, le=100), 
+    user: dict = Depends(get_current_user)
 ):
-    return patient_service.get_patients_page(page, page_size, search)
-
+    # 3. List and Count using your custom wrapper
+    offset = (page - 1) * page_size
+    items = db.list_patients(limit=page_size, offset=offset)
+    total = db.count_patients()
+    
+    return {
+        "items": items,
+        "total": total,
+        "page": page,
+        "page_size": page_size
+    }
 
 @router.get("/stats")
-def stats(user: dict = Depends(get_current_user)):
-    return patient_service.dashboard_stats()
-
-
-@router.post("")
-def create_patient(payload: PatientIn, user: dict = Depends(get_current_user)):
-    record = patient_service.add_patient(payload.model_dump(), created_by=user["email"])
-    log_action(actor=user["email"], action="create_patient", details=f"patient_id={payload.patient_id}")
-    return record
-
-
-@router.post("/upload-csv")
-async def upload_csv(file: UploadFile = File(...), user: dict = Depends(get_current_user)):
-    if not file.filename.endswith(".csv"):
-        raise HTTPException(status_code=400, detail="Only .csv files are supported")
-    content = await file.read()
-    result = patient_service.import_csv(content, created_by=user["email"])
-    log_action(actor=user["email"], action="upload_csv", details=f"inserted={result['inserted']}")
-    return result
+def get_patient_stats(user: dict = Depends(get_current_user)):
+    # 4. Return the aggregated stats (Fixes the 404 errors!)
+    return db.get_patient_stats()
