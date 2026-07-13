@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}Reports{% endblock %}
+{% block page_title %}Reports{% endblock %}
+{% block page_sub %}Export and summarize registry & prediction data{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="/static/css/dashboard.css">{% endblock %}
+
+{% block content %}
+<div class="stat-grid">
+  <div class="stat-card">
+    <span class="card-eyebrow">Total patients</span>
+    <div class="stat-value mono" id="rTotal">—</div>
+  </div>
+  <div class="stat-card">
+    <span class="card-eyebrow">Readmission rate</span>
+    <div class="stat-value mono risk-high" id="rRate">—</div>
+  </div>
+  <div class="stat-card">
+    <span class="card-eyebrow">Avg. predicted risk</span>
+    <div class="stat-value mono" id="rAvgRisk">—</div>
+  </div>
+  <div class="stat-card">
+    <span class="card-eyebrow">High-risk predictions</span>
+    <div class="stat-value mono risk-high" id="rHighRisk">—</div>
+  </div>
+</div>
+
+<div class="grid-2">
+  <div class="card">
+    <div class="card-header"><span class="card-title">Export data</span></div>
+    <p class="hint" style="margin-bottom:16px;">Download the current registry or prediction history as CSV for offline analysis.</p>
+    <div style="display:flex; gap:10px; flex-wrap:wrap;">
+      <a class="btn btn-primary" href="#" id="exportPatientsBtn">⬇ Export patients CSV</a>
+      <a class="btn btn-ghost" href="#" id="exportPredictionsBtn">⬇ Export predictions CSV</a>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header"><span class="card-title">Discharge destination breakdown</span></div>
+    <div id="destinationBreakdown"></div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="/static/js/reports.js"></script>
+{% endblock %}

@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% block title %}Risk Prediction{% endblock %}
+{% block page_title %}Risk Prediction{% endblock %}
+{% block page_sub %}Score a discharge for 30-day readmission risk{% endblock %}
+
+{% block content %}
+<div class="grid-2">
+  <div class="card">
+    <div class="card-header"><span class="card-title">Patient details</span></div>
+    <div class="error-banner" id="predictError"></div>
+    <form id="predictForm">
+      <div class="field-row">
+        <div class="field"><label>Patient ID (optional)</label><input type="number" id="p_patient_id"></div>
+        <div class="field"><label>Age</label><input type="number" id="p_age" required min="0" max="120" value="65"></div>
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label>Gender</label>
+          <select id="p_gender"><option>Male</option><option>Female</option><option>Other</option></select>
+        </div>
+        <div class="field"><label>Blood pressure</label><input type="text" id="p_bp" placeholder="130/80" required value="130/80"></div>
+      </div>
+      <div class="field-row">
+        <div class="field"><label>Cholesterol (mg/dL)</label><input type="number" id="p_cholesterol" required value="200"></div>
+        <div class="field"><label>BMI</label><input type="number" step="0.1" id="p_bmi" required value="28.0"></div>
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label>Diabetes</label>
+          <select id="p_diabetes"><option>No</option><option>Yes</option></select>
+        </div>
+        <div class="field">
+          <label>Hypertension</label>
+          <select id="p_hypertension"><option>No</option><option>Yes</option></select>
+        </div>
+      </div>
+      <div class="field-row">
+        <div class="field"><label>Medication count</label><input type="number" id="p_meds" required min="0" value="5"></div>
+        <div class="field"><label>Length of stay (days)</label><input type="number" id="p_los" required min="1" value="5"></div>
+      </div>
+      <div class="field">
+        <label>Discharge destination</label>
+        <select id="p_destination"><option>Home</option><option>Rehab</option><option>Nursing_Facility</option></select>
+      </div>
+      <button type="submit" class="btn btn-primary btn-block" id="predictBtn">Calculate risk score</button>
+    </form>
+  </div>
+
+  <div class="card">
+    <div class="card-header"><span class="card-title">Risk output</span></div>
+    <div id="gaugeContainer">
+      <div class="gauge-wrap">
+        <svg viewBox="0 0 240 140" width="260" height="150">
+          <path d="M20,120 A100,100 0 0,1 220,120" fill="none" stroke="#263A56" stroke-width="18" stroke-linecap="round"/>
+          <path id="gaugeArc" d="M20,120 A100,100 0 0,1 220,120" fill="none" stroke="#3FBFAD" stroke-width="18" stroke-linecap="round"
+                stroke-dasharray="0 314" />
+        </svg>
+        <div class="gauge-score mono" id="gaugeScore">--%</div>
+        <div class="gauge-label" id="gaugeLabel">Awaiting input</div>
+      </div>
+    </div>
+    <div class="hint" id="gaugeHint" style="text-align:center; margin-top:8px;">
+      Fill out the form and calculate to see a risk score here.
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="/static/js/prediction.js"></script>
+{% endblock %}

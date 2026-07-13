@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sign in · ReAdmitIQ</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/static/css/style.css">
+<link rel="stylesheet" href="/static/css/login.css">
+</head>
+<body>
+<div class="auth-shell">
+
+  <div class="auth-side">
+    <div class="auth-brand">
+      <svg viewBox="0 0 40 24" class="pulse-mark" aria-hidden="true">
+        <polyline points="0,12 9,12 12,3 16,21 20,12 40,12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <span class="brand-word">ReAdmit<em>IQ</em></span>
+    </div>
+
+    <div class="auth-hero">
+      <h2>Know which patients are likely to come back &mdash; before they do.</h2>
+      <p>ReAdmitIQ scores every discharge against a model trained on your hospital's own readmission history, so care coordinators can prioritize follow-up where it matters most.</p>
+    </div>
+
+    <div class="vitals-strip">
+      <svg viewBox="0 0 600 60" preserveAspectRatio="none" aria-hidden="true">
+        <polyline points="0,30 60,30 75,10 90,50 105,30 180,30 195,15 210,45 225,30 320,30 335,8 350,52 365,30 460,30 475,12 490,48 505,30 600,30"
+          fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <div class="vitals-caption">
+        <span>MODEL: RANDOM FOREST</span>
+        <span>FEATURES: 11</span>
+        <span>TRAINED ON 30,000 DISCHARGES</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="auth-form-side">
+    <div class="auth-card">
+      <h1 id="formHeading">Welcome back</h1>
+      <p class="sub" id="formSub">Sign in to your clinical dashboard.</p>
+
+      <div class="tab-switch">
+        <button type="button" class="active" data-tab="login">Sign in</button>
+        <button type="button" data-tab="signup">Create account</button>
+      </div>
+
+      <div class="error-banner" id="errorBanner"></div>
+      <div class="success-banner" id="successBanner"></div>
+
+      <form id="loginForm" class="form-panel active">
+        <div class="field">
+          <label for="loginEmail">Email</label>
+          <input type="email" id="loginEmail" required placeholder="you@hospital.org">
+        </div>
+        <div class="field">
+          <label for="loginPassword">Password</label>
+          <input type="password" id="loginPassword" required placeholder="••••••••">
+        </div>
+        <button type="submit" class="btn btn-primary btn-block" id="loginBtn">Sign in</button>
+      </form>
+
+      <form id="signupForm" class="form-panel">
+        <div class="field">
+          <label for="signupName">Full name</label>
+          <input type="text" id="signupName" required placeholder="Username">
+        </div>
+        <div class="field">
+          <label for="signupEmail">Email</label>
+          <input type="email" id="signupEmail" required placeholder="you@domain.com">
+        </div>
+        <div class="field">
+          <label for="signupRole">Role</label>
+          <select id="signupRole">
+            <option value="clinician">Clinician</option>
+            <option value="care_coordinator">Care coordinator</option>
+            <option value="admin">Administrator</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="signupPassword">Password</label>
+          <input type="password" id="signupPassword" required placeholder="At least 6 characters">
+        </div>
+        <button type="submit" class="btn btn-primary btn-block" id="signupBtn">Create account</button>
+      </form>
+
+      <div class="demo-note">No Supabase project configured? No problem &mdash; accounts are stored in a local fallback database automatically, so you can sign up and try the full app right now.</div>
+    </div>
+  </div>
+
+</div>
+<script src="/static/js/login.js"></script>
+</body>
+</html>
