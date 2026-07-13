@@ -12,9 +12,9 @@ import time
 from contextlib import contextmanager
 from typing import Optional
 
-from supabase.client import SupabaseUnavailable, get_supabase
+from supabase.client import get_supabase
 from app.config import get_settings
-
+import httpx
 settings = get_settings()
 DB_PATH = settings.local_db_path
 
@@ -96,7 +96,7 @@ def get_user_by_email(email: str) -> Optional[dict]:
         try:
             rows = sb.select("users", {"email": f"eq.{email}", "limit": 1})
             return rows[0] if rows else None
-        except SupabaseUnavailable:
+        except httpx.HTTPError:
             pass
     with _conn() as conn:
         row = conn.execute("SELECT * FROM users WHERE email = ?", (email,)).fetchone()
@@ -113,7 +113,7 @@ def create_user(user_id: str, email: str, full_name: str, role: str, password_ha
         try:
             sb.insert("users", record)
             return record
-        except SupabaseUnavailable:
+        except httpx.HTTPError:
             pass
     with _conn() as conn:
         existing = conn.execute("SELECT id FROM users WHERE email = ?", (email,)).fetchone()
@@ -143,7 +143,7 @@ def list_patients(limit: int = 100, offset: int = 0, search: str = "") -> list:
             if search:
                 params["gender"] = f"ilike.*{search}*"
             return sb.select("patients", params)
-        except SupabaseUnavailable:
+        except httpx.HTTPError:
             pass
     with _conn() as conn:
         if search:
@@ -164,7 +164,7 @@ def count_patients() -> int:
     if sb:
         try:
             return sb.count("patients")
-        except SupabaseUnavailable:
+        except httpx.HTTPError:
             pass
     with _conn() as conn:
         row = conn.execute("SELECT COUNT(*) as c FROM patients").fetchone()
@@ -178,7 +178,7 @@ def insert_patient(record: dict, created_by: str = "") -> dict:
         try:
             result = sb.insert("patients", record)
             return result[0] if result else record
-        except SupabaseUnavailable:
+        except httpx.HTTPError:
             pass
     with _conn() as conn:
         cur = conn.execute(
@@ -211,7 +211,7 @@ def bulk_insert_patients(records: list, created_by: str = "") -> int:
                 sb.insert("patients", payload[i:i + CHUNK])
                 total += len(payload[i:i + CHUNK])
             return total
-        except SupabaseUnavailable:
+        except httpx.HTTPError:
             pass
     with _conn() as conn:
         conn.executemany(
@@ -244,7 +244,7 @@ def get_patient_stats() -> dict:
                           "readmitted_30_days,length_of_stay",
                 "limit": 100000,
             })
-        except SupabaseUnavailable:
+        except httpx.HTTPError:
             all_rows = []
     else:
         all_rows = []
@@ -286,7 +286,7 @@ def insert_prediction(patient_ref, risk_score, risk_label, input_payload: dict, 
         try:
             result = sb.insert("predictions", record)
             return result[0] if result else record
-        except SupabaseUnavailable:
+        except httpx.HTTPError:
             pass
     with _conn() as conn:
         cur = conn.execute(
@@ -303,7 +303,7 @@ def list_predictions(limit: int = 50) -> list:
     if sb:
         try:
             return sb.select("predictions", {"order": "id.desc", "limit": limit})
-        except SupabaseUnavailable:
+        except httpx.HTTPError:
             pass
     with _conn() as conn:
         rows = conn.execute(
@@ -320,7 +320,7 @@ def insert_audit_log(actor: str, action: str, details: str = "") -> dict:
         try:
             result = sb.insert("audit_logs", record)
             return result[0] if result else record
-        except SupabaseUnavailable:
+        except httpx.HTTPError:
             pass
     with _conn() as conn:
         cur = conn.execute(
@@ -336,7 +336,7 @@ def list_audit_logs(limit: int = 200) -> list:
     if sb:
         try:
             return sb.select("audit_logs", {"order": "id.desc", "limit": limit})
-        except SupabaseUnavailable:
+        except httpx.HTTPError:
             pass
     with _conn() as conn:
         rows = conn.execute(
