@@ -72,3 +72,13 @@ def audit_page(request: Request):
 @app.get("/api/health")
 def health():
     return {"status": "ok", "app": settings.app_name, "supabase_configured": settings.supabase_configured}
+
+from app.ml.predictor import load_model
+
+@app.on_event("startup")
+def startup_event():
+    print("Loading ML model...")
+
+    load_model()
+
+    print("ML model loaded successfully.")
