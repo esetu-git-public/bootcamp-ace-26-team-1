@@ -1,5 +1,3 @@
-// Shared across every authenticated page: verifies a token exists, fills in
-// the sidebar user chip, highlights the active nav item, and wires logout.
 (function () {
   const token = localStorage.getItem('readmitiq_token');
   if (!token) {
@@ -37,11 +35,6 @@
     });
   }
 
-  // Defined as plain functions in this closure (not object methods) so that
-  // destructuring them off window.ReAdmitIQ -- e.g. `const { api } = window.ReAdmitIQ`
-  // -- still works correctly. Methods that use `this` break when called that
-  // way, since the caller loses track of what `this` should be; these don't
-  // rely on `this` at all, they just close over `token` directly.
   function authHeaders(isFormData) {
     const headers = { 'Authorization': `Bearer ${token}` };
     if (!isFormData) headers['Content-Type'] = 'application/json';
@@ -63,5 +56,19 @@
     return res;
   }
 
-  window.ReAdmitIQ = { token, user, authHeaders, api };
+  function formatApiError(detail) {
+    if (!detail) return 'Something went wrong. Please try again.';
+    if (typeof detail === 'string') return detail;
+    if (Array.isArray(detail)) {
+      return detail.map(d => {
+        if (typeof d === 'string') return d;
+        const loc = Array.isArray(d.loc) ? d.loc.filter(x => x !== 'body').join('.') : '';
+        return loc ? `${loc}: ${d.msg}` : (d.msg || JSON.stringify(d));
+      }).join('; ');
+    }
+    if (typeof detail === 'object') return detail.msg || JSON.stringify(detail);
+    return String(detail);
+  }
+
+  window.ReAdmitIQ = { token, user, authHeaders, api, formatApiError };
 })();
