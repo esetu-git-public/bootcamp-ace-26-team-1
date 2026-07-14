@@ -41,3 +41,12 @@ class Settings(BaseSettings):
 @lru_cache
 def get_settings() -> Settings:
     return Settings()
+
+from app.config import get_settings
+
+settings = get_settings()
+
+# Use them directly
+supabase_url = settings.supabase_url
+supabase_key = settings.supabase_key
+print("Supabase configured:", settings.supabase_configured)

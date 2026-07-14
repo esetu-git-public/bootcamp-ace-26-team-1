@@ -67,3 +67,18 @@ def feature_importance() -> dict:
         zip(feature_cols, [round(float(x), 4) for x in model.feature_importances_]),
         key=lambda kv: -kv[1],
     ))
+
+import joblib
+
+model = None
+scaler = None
+feature_cols = None
+label_encoders = None
+
+
+def load_model():
+    global model, scaler, feature_cols, label_encoders
+
+    model = joblib.load("app/ml/model.pkl")
+    scaler = joblib.load("app/ml/scaler.pkl")
+    feature_cols = joblib.load("app/ml/feature_cols.pkl")
