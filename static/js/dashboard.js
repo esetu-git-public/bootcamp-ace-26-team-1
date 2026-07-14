@@ -1,10 +1,6 @@
 (async function () {
   const { api } = window.ReAdmitIQ;
-
-  const chartTextColor = '#8FA3BC';
-  const chartGridColor = 'rgba(38,58,86,0.6)';
-  Chart.defaults.color = chartTextColor;
-  Chart.defaults.font.family = "'IBM Plex Sans', sans-serif";
+  const palette = ['#3FBFAD', '#F2B138', '#F2545B', '#5E7291', '#6C7CFF', '#2CA58D'];
 
   async function loadStats() {
     const res = await api('/api/patients/stats');
@@ -12,7 +8,7 @@
     const stats = await res.json();
 
     document.getElementById('statTotal').textContent = stats.total_patients.toLocaleString();
-    document.getElementById('statRate').textContent = stats.readmission_rate + '%';
+    document.getElementById('statRate').textContent = `${stats.readmission_rate}%`;
     document.getElementById('statRateDetail').textContent =
       `${stats.readmitted_count.toLocaleString()} of ${stats.total_patients.toLocaleString()} readmitted`;
     document.getElementById('statLos').textContent = stats.avg_length_of_stay;
@@ -41,7 +37,11 @@
       medication_count: 'Medication count', length_of_stay: 'Length of stay',
       diabetes_enc: 'Diabetes', hypertension_enc: 'Hypertension', gender_enc: 'Gender',
     };
-    const entries = Object.entries(importances);
+    const entries = Object.entries(importances || {});
+    if (!entries.length) {
+      list.innerHTML = '<p class="hint">Model not trained yet.</p>';
+      return;
+    }
     const max = Math.max(...entries.map(([, v]) => v), 0.0001);
     list.innerHTML = entries.map(([key, val]) => `
       <div class="importance-row">
@@ -76,47 +76,77 @@
   }
 
   function renderDestinationChart(byDestination) {
-    const ctx = document.getElementById('destinationChart');
-    new Chart(ctx, {
-      type: 'doughnut',
-      data: {
-        labels: Object.keys(byDestination),
-        datasets: [{
-          data: Object.values(byDestination),
-          backgroundColor: ['#3FBFAD', '#F2B138', '#F2545B', '#5E7291'],
-          borderColor: '#16263D',
-          borderWidth: 2,
-        }],
-      },
-      options: {
-        plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, padding: 16 } } },
-        cutout: '65%',
-      },
-    });
+    const container = document.getElementById('destinationChart');
+    if (!container) return;
+
+    const entries = Object.entries(byDestination || {});
+    if (!entries.length) {
+      container.innerHTML = '<div class="chart-empty">No discharge data yet.</div>';
+      return;
+    }
+
+    const total = entries.reduce((sum, [, value]) => sum + value, 0);
+    const radius = 54;
+    const circumference = 2 * Math.PI * radius;
+    let offset = 0;
+    const segments = entries.map(([label, value], index) => {
+      const dash = (value / total) * circumference;
+      const segment = `<circle cx="70" cy="70" r="${radius}" fill="none" stroke="${palette[index % palette.length]}" stroke-width="18" stroke-linecap="round" stroke-dasharray="${dash} ${circumference - dash}" stroke-dashoffset="${-offset}" transform="rotate(-90 70 70)"></circle>`;
+      offset += dash;
+      return segment;
+    }).join('');
+
+    const legend = entries.map(([label, value], index) => `
+      <div class="item">
+        <span class="dot" style="background:${palette[index % palette.length]}"></span>
+        <span>${label} (${value})</span>
+      </div>
+    `).join('');
+
+    container.innerHTML = `
+      <div class="chart-donut-wrap">
+        <svg viewBox="0 0 140 140" class="chart-donut">
+          <circle cx="70" cy="70" r="${radius}" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="18"></circle>
+          ${segments}
+        </svg>
+        <div class="chart-donut-center">
+          <div class="chart-donut-total">${total}</div>
+          <div class="chart-donut-label">patients</div>
+        </div>
+      </div>
+      <div class="mini-legend">${legend}</div>
+    `;
   }
 
   function renderGenderChart(byGender) {
-    const ctx = document.getElementById('genderChart');
-    new Chart(ctx, {
-      type: 'bar',
-      data: {
-        labels: Object.keys(byGender),
-        datasets: [{
-          label: 'Patients',
-          data: Object.values(byGender),
-          backgroundColor: '#3FBFAD',
-          borderRadius: 6,
-          maxBarThickness: 56,
-        }],
-      },
-      options: {
-        plugins: { legend: { display: false } },
-        scales: {
-          x: { grid: { display: false } },
-          y: { grid: { color: chartGridColor }, beginAtZero: true },
-        },
-      },
-    });
+    const container = document.getElementById('genderChart');
+    if (!container) return;
+
+    const entries = Object.entries(byGender || {});
+    if (!entries.length) {
+      container.innerHTML = '<div class="chart-empty">No gender data yet.</div>';
+      return;
+    }
+
+    const max = Math.max(...entries.map(([, value]) => value), 1);
+    const colorMap = {
+      Male: '#0096FF',
+      Female: '#DE3163',
+      Unknown: '#3FBFAD',
+    };
+    container.innerHTML = `
+      <div class="bar-chart">
+        ${entries.map(([label, value]) => `
+          <div class="bar-column">
+            <div class="bar-track">
+              <div class="bar-fill" style="height:${(value / max) * 100}%; background:${colorMap[label] || '#3FBFAD'}"></div>
+            </div>
+            <div class="bar-label">${label}</div>
+            <div class="bar-value">${value}</div>
+          </div>
+        `).join('')}
+      </div>
+    `;
   }
 
   loadStats();
