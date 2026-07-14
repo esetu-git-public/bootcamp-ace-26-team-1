@@ -1,5 +1,5 @@
 (function () {
-  const { api } = window.ReAdmitIQ;
+  const { api, formatApiError } = window.ReAdmitIQ;
   const ARC_LENGTH = 314.16;
 
   const colors = { Low: '#3FBFAD', Medium: '#F2B138', High: '#F2545B' };
@@ -32,7 +32,7 @@
       if (!res) return;
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
-        throw new Error(err.detail || 'Could not calculate a risk score.');
+        throw new Error(formatApiError(err.detail));
       }
       const result = await res.json();
       renderGauge(result);

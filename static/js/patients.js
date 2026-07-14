@@ -1,5 +1,5 @@
 (function () {
-  const { api } = window.ReAdmitIQ;
+  const { api, formatApiError } = window.ReAdmitIQ;
   let currentPage = 1;
   const pageSize = 15;
   let searchTimer = null;
@@ -79,7 +79,7 @@
     if (!res) return;
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
-      resultEl.textContent = `Error: ${err.detail || 'upload failed'}`;
+      resultEl.textContent = `Error: ${formatApiError(err.detail)}`;
       return;
     }
     const data = await res.json();
@@ -115,7 +115,7 @@
     if (!res) return;
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
-      errorEl.textContent = err.detail || 'Could not save patient.';
+      errorEl.textContent = formatApiError(err.detail);
       errorEl.classList.add('show');
       return;
     }

@@ -36,6 +36,20 @@
     errorBanner.classList.remove('show');
   }
 
+  function formatApiError(detail) {
+    if (!detail) return 'Something went wrong. Please try again.';
+    if (typeof detail === 'string') return detail;
+    if (Array.isArray(detail)) {
+      return detail.map(d => {
+        if (typeof d === 'string') return d;
+        const loc = Array.isArray(d.loc) ? d.loc.filter(x => x !== 'body').join('.') : '';
+        return loc ? `${loc}: ${d.msg}` : (d.msg || JSON.stringify(d));
+      }).join('; ');
+    }
+    if (typeof detail === 'object') return detail.msg || JSON.stringify(detail);
+    return String(detail);
+  }
+
   async function callApi(path, body) {
     const res = await fetch(path, {
       method: 'POST',
@@ -43,7 +57,7 @@
       body: JSON.stringify(body),
     });
     const data = await res.json().catch(() => ({}));
-    if (!res.ok) throw new Error(data.detail || 'Something went wrong. Please try again.');
+    if (!res.ok) throw new Error(formatApiError(data.detail));
     return data;
   }
 
@@ -95,7 +109,6 @@
     }
   });
 
-  // If already logged in, skip straight to the dashboard.
   if (localStorage.getItem('readmitiq_token')) {
     window.location.href = '/dashboard';
   }
