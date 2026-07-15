@@ -1,20 +1,36 @@
+# Environment files
+.env
+
+# Python cache
 __pycache__/
 *.py[cod]
-*.egg-info/
-.env
-.venv/
+.pytest_cache/
+
+# Virtual environments
 venv/
+.venv/
+env/
+
+# Database files
 *.db
 local_fallback.db
+test_fallback.db
+
+# Logs
+logs/
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE files
+.vscode/
+.idea/
+
+# Model checkpoints (optional if you don't want to track them)
+# *.pkl
+
+# Uploaded files
 uploads/*
 !uploads/.gitkeep
-logs/*.log
-.DS_Store
-.idea/
-.vscode/
-node_modules/
-*.log
-.pytest_cache/
-tests/__pycache__/
-__pycache__/
-*.pyc
