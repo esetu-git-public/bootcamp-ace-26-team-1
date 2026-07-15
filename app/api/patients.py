@@ -40,7 +40,7 @@ def create_patient(payload: PatientCreate, user: dict = Depends(get_current_user
     log_action(actor=user.get("email"), action="create_patient", details=f"patient_id={payload.patient_id}")
     return result
 
-@router.get("/")
+@router.get("")
 def get_patients(
     page: int = Query(1, ge=1), 
     page_size: int = Query(50, ge=1, le=100),

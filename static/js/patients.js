@@ -17,7 +17,7 @@
 
   async function loadPatients() {
     const search = document.getElementById('searchInput').value.trim();
-    const res = await api(`/api/patients?page=${currentPage}&page_size=${pageSize}&search=${encodeURIComponent(search)}`);
+    const res = await api(`/api/patients/?page=${currentPage}&page_size=${pageSize}&search=${encodeURIComponent(search)}`);
     if (!res || !res.ok) {
       empty.style.display = 'block';
       tbody.innerHTML = '';
@@ -31,7 +31,7 @@
     const total = Number(data.total ?? data.count ?? 0);
     const totalPages = Number(data.total_pages ?? 1);
 
-    const tableWrap = tbody.parentElement?.parentElement;
+    const tableWrap = document.querySelector('.table-wrap');
     if (!items.length) {
       if (tableWrap) tableWrap.style.display = 'none';
       empty.style.display = 'block';
@@ -111,10 +111,10 @@
     const errorEl = document.getElementById('addError');
     errorEl.classList.remove('show');
     const payload = {
-      patient_id: document.getElementById('f_patient_id').value ? Number(document.getElementById('f_patient_id').value) : null,
+      patient_id: document.getElementById('f_patient_id').value ? Number(document.getElementById('f_patient_id').value) : 0,
       age: Number(document.getElementById('f_age').value),
       gender: document.getElementById('f_gender').value,
-      blood_pressure: document.getElementById('f_bp').value,
+      blood_pressure: document.getElementById('f_bp').value.trim(),
       cholesterol: Number(document.getElementById('f_cholesterol').value),
       bmi: Number(document.getElementById('f_bmi').value),
       diabetes: document.getElementById('f_diabetes').value,
@@ -122,8 +122,9 @@
       medication_count: Number(document.getElementById('f_meds').value),
       length_of_stay: Number(document.getElementById('f_los').value),
       discharge_destination: document.getElementById('f_destination').value,
+      readmitted_30_days: 'No',
     };
-    const res = await api('/api/patients', { method: 'POST', body: JSON.stringify(payload) });
+    const res = await api('/api/patients/', { method: 'POST', body: JSON.stringify(payload) });
     if (!res) return;
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
@@ -134,7 +135,7 @@
     modal.classList.remove('show');
     e.target.reset();
     currentPage = 1;
-    loadPatients();
+    await loadPatients();
   });
 
   loadPatients();
