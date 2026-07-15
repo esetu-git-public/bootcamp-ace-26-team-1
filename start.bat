@@ -1,4 +1,6 @@
 @echo off
+REM Move to the directory where this script is located
+cd /d "%~dp0"
 echo ========================================
 echo Hospital Readmission Prediction System
 echo ========================================
