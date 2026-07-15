@@ -129,6 +129,12 @@ class TestListPatients:
         resp = client.get("/api/patients")
         assert resp.status_code == 401
 
+    def test_list_accepts_search_query(self, auth_headers, valid_patient_payload):
+        _create_patient(auth_headers, valid_patient_payload)
+        resp = client.get("/api/patients?page=1&page_size=5&search=Female", headers=auth_headers)
+        assert resp.status_code == 200
+        assert "items" in resp.json()
+
     def test_list_returns_total_count(self, auth_headers, valid_patient_payload):
         _create_patient(auth_headers, valid_patient_payload)
         resp = client.get("/api/patients?page=1&page_size=5", headers=auth_headers)

@@ -18,38 +18,50 @@
   async function loadPatients() {
     const search = document.getElementById('searchInput').value.trim();
     const res = await api(`/api/patients?page=${currentPage}&page_size=${pageSize}&search=${encodeURIComponent(search)}`);
-    if (!res || !res.ok) return;
-    const data = await res.json();
-
-    if (!data.items.length) {
-      tbody.parentElement.parentElement.style.display = 'none';
+    if (!res || !res.ok) {
       empty.style.display = 'block';
+      tbody.innerHTML = '';
+      pageInfo.textContent = 'Unable to load patients.';
+      resultCount.textContent = '';
+      return;
+    }
+
+    const data = await res.json();
+    const items = Array.isArray(data.items) ? data.items : (Array.isArray(data.data) ? data.data : []);
+    const total = Number(data.total ?? data.count ?? 0);
+    const totalPages = Number(data.total_pages ?? 1);
+
+    const tableWrap = tbody.parentElement?.parentElement;
+    if (!items.length) {
+      if (tableWrap) tableWrap.style.display = 'none';
+      empty.style.display = 'block';
+      tbody.innerHTML = '';
     } else {
-      tbody.parentElement.parentElement.style.display = '';
+      if (tableWrap) tableWrap.style.display = '';
       empty.style.display = 'none';
     }
 
-    tbody.innerHTML = data.items.map(p => `
+    tbody.innerHTML = items.map(p => `
       <tr>
         <td class="mono">${p.patient_id ?? '—'}</td>
-        <td>${p.age}</td>
-        <td>${p.gender}</td>
-        <td class="mono">${p.blood_pressure}</td>
-        <td>${p.cholesterol}</td>
-        <td>${p.bmi}</td>
+        <td>${p.age ?? '—'}</td>
+        <td>${p.gender ?? '—'}</td>
+        <td class="mono">${p.blood_pressure ?? '—'}</td>
+        <td>${p.cholesterol ?? '—'}</td>
+        <td>${p.bmi ?? '—'}</td>
         <td>${badge(p.diabetes)}</td>
         <td>${badge(p.hypertension)}</td>
-        <td>${p.medication_count}</td>
-        <td>${p.length_of_stay}</td>
+        <td>${p.medication_count ?? '—'}</td>
+        <td>${p.length_of_stay ?? '—'}</td>
         <td>${(p.discharge_destination || '').replace('_', ' ')}</td>
         <td>${badge(p.readmitted_30_days)}</td>
       </tr>
     `).join('');
 
-    pageInfo.textContent = `Page ${data.page} of ${data.total_pages}`;
-    resultCount.textContent = `${data.total.toLocaleString()} patients`;
-    document.getElementById('prevPageBtn').disabled = data.page <= 1;
-    document.getElementById('nextPageBtn').disabled = data.page >= data.total_pages;
+    pageInfo.textContent = `Page ${Number(data.page ?? currentPage)} of ${totalPages}`;
+    resultCount.textContent = `${total.toLocaleString()} patients`;
+    document.getElementById('prevPageBtn').disabled = Number(data.page ?? currentPage) <= 1;
+    document.getElementById('nextPageBtn').disabled = Number(data.page ?? currentPage) >= totalPages;
   }
 
   document.getElementById('searchInput').addEventListener('input', () => {
