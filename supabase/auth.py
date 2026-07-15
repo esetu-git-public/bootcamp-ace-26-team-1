@@ -1,8 +1,4 @@
-"""
-Login/signup helpers. Uses Supabase Auth (GoTrue REST API) when configured,
-otherwise a local bcrypt scheme backed by the `users` table in
-supabase/database.py.
-"""
+
 import uuid
 from passlib.context import CryptContext
 

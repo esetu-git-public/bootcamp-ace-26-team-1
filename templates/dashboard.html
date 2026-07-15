@@ -37,7 +37,7 @@
     <div class="card-header">
       <span class="card-title">Discharge destination mix</span>
     </div>
-    <canvas id="destinationChart" height="220"></canvas>
+    <div id="destinationChart" class="chart-shell"></div>
   </div>
 
   <div class="card">
@@ -53,7 +53,7 @@
     <div class="card-header">
       <span class="card-title">Patients by gender</span>
     </div>
-    <canvas id="genderChart" height="200"></canvas>
+    <div id="genderChart" class="chart-shell"></div>
   </div>
 
   <div class="card">
@@ -76,6 +76,5 @@
 {% endblock %}
 
 {% block extra_js %}
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js"></script>
 <script src="/static/js/dashboard.js"></script>
 {% endblock %}

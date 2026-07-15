@@ -11,8 +11,6 @@ class SupabaseREST:
     def __init__(self, url: str, anon_key: str, service_role_key: str = ""):
         self.url = url.rstrip("/")
         self.anon_key = anon_key
-        # Fall back to the anon key if no service role key is configured,
-        # so the app still runs -- just subject to whatever RLS you've set.
         self.service_key = service_role_key or anon_key
 
         self.rest_base = f"{self.url}/rest/v1"

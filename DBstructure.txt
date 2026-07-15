@@ -1,0 +1,48 @@
+-- 1. Create Users Table
+CREATE TABLE IF NOT EXISTS users (
+    id TEXT PRIMARY KEY,
+    email TEXT UNIQUE NOT NULL,
+    full_name TEXT,
+    role TEXT DEFAULT 'clinician',
+    password_hash TEXT NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- 2. Create Patients Table
+CREATE TABLE IF NOT EXISTS patients (
+    id SERIAL PRIMARY KEY,
+    patient_id INTEGER,
+    age INTEGER,
+    gender TEXT,
+    blood_pressure TEXT,
+    cholesterol INTEGER,
+    bmi REAL,
+    diabetes TEXT,
+    hypertension TEXT,
+    medication_count INTEGER,
+    length_of_stay INTEGER,
+    discharge_destination TEXT,
+    readmitted_30_days TEXT,
+    created_by TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- 3. Create Predictions Table
+CREATE TABLE IF NOT EXISTS predictions (
+    id SERIAL PRIMARY KEY,
+    patient_ref INTEGER,
+    risk_score REAL,
+    risk_label TEXT,
+    input_payload TEXT,
+    created_by TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- 4. Create Audit Logs Table
+CREATE TABLE IF NOT EXISTS audit_logs (
+    id SERIAL PRIMARY KEY,
+    actor TEXT,
+    action TEXT,
+    details TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);

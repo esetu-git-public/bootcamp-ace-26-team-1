@@ -1,11 +1,3 @@
-"""
-CRUD wrappers around Supabase Postgres tables:
-    users, patients, predictions, audit_logs
-
-When Supabase isn't configured, every function transparently falls back to a
-local SQLite file (see app.config.settings.local_db_path) with an identical
-schema, so the rest of the app never has to branch on which backend is active.
-"""
 import sqlite3
 import json
 import time
@@ -14,9 +6,13 @@ from typing import Optional
 
 from supabase.client import get_supabase
 from app.config import get_settings
-import httpx
+
 settings = get_settings()
 DB_PATH = settings.local_db_path
+
+
+def _log_supabase_failure(where: str, exc: Exception):
+    print(f"[database.{where}] Supabase call failed, falling back to SQLite: {exc}")
 
 
 # --------------------------------------------------------------------------
@@ -96,8 +92,8 @@ def get_user_by_email(email: str) -> Optional[dict]:
         try:
             rows = sb.select("users", {"email": f"eq.{email}", "limit": 1})
             return rows[0] if rows else None
-        except httpx.HTTPError:
-            pass
+        except Exception as exc:
+            _log_supabase_failure("get_user_by_email", exc)
     with _conn() as conn:
         row = conn.execute("SELECT * FROM users WHERE email = ?", (email,)).fetchone()
         return dict(row) if row else None
@@ -113,8 +109,8 @@ def create_user(user_id: str, email: str, full_name: str, role: str, password_ha
         try:
             sb.insert("users", record)
             return record
-        except httpx.HTTPError:
-            pass
+        except Exception as exc:
+            _log_supabase_failure("create_user", exc)
     with _conn() as conn:
         existing = conn.execute("SELECT id FROM users WHERE email = ?", (email,)).fetchone()
         if existing:
@@ -143,8 +139,8 @@ def list_patients(limit: int = 100, offset: int = 0, search: str = "") -> list:
             if search:
                 params["gender"] = f"ilike.*{search}*"
             return sb.select("patients", params)
-        except httpx.HTTPError:
-            pass
+        except Exception as exc:
+            _log_supabase_failure("list_patients", exc)
     with _conn() as conn:
         if search:
             rows = conn.execute(
@@ -164,8 +160,8 @@ def count_patients() -> int:
     if sb:
         try:
             return sb.count("patients")
-        except httpx.HTTPError:
-            pass
+        except Exception as exc:
+            _log_supabase_failure("count_patients", exc)
     with _conn() as conn:
         row = conn.execute("SELECT COUNT(*) as c FROM patients").fetchone()
         return row["c"]
@@ -178,8 +174,8 @@ def insert_patient(record: dict, created_by: str = "") -> dict:
         try:
             result = sb.insert("patients", record)
             return result[0] if result else record
-        except httpx.HTTPError:
-            pass
+        except Exception as exc:
+            _log_supabase_failure("insert_patient", exc)
     with _conn() as conn:
         cur = conn.execute(
             """INSERT INTO patients
@@ -211,8 +207,8 @@ def bulk_insert_patients(records: list, created_by: str = "") -> int:
                 sb.insert("patients", payload[i:i + CHUNK])
                 total += len(payload[i:i + CHUNK])
             return total
-        except httpx.HTTPError:
-            pass
+        except Exception as exc:
+            _log_supabase_failure("bulk_insert_patients", exc)
     with _conn() as conn:
         conn.executemany(
             """INSERT INTO patients
@@ -237,6 +233,7 @@ def bulk_insert_patients(records: list, created_by: str = "") -> int:
 def get_patient_stats() -> dict:
     """Aggregate stats used by the dashboard."""
     sb = get_supabase()
+    all_rows = []
     if sb:
         try:
             all_rows = sb.select("patients", {
@@ -244,10 +241,9 @@ def get_patient_stats() -> dict:
                           "readmitted_30_days,length_of_stay",
                 "limit": 100000,
             })
-        except httpx.HTTPError:
+        except Exception as exc:
+            _log_supabase_failure("get_patient_stats", exc)
             all_rows = []
-    else:
-        all_rows = []
     if not all_rows:
         with _conn() as conn:
             all_rows = [dict(r) for r in conn.execute(
@@ -286,8 +282,8 @@ def insert_prediction(patient_ref, risk_score, risk_label, input_payload: dict, 
         try:
             result = sb.insert("predictions", record)
             return result[0] if result else record
-        except httpx.HTTPError:
-            pass
+        except Exception as exc:
+            _log_supabase_failure("insert_prediction", exc)
     with _conn() as conn:
         cur = conn.execute(
             "INSERT INTO predictions (patient_ref, risk_score, risk_label, input_payload, created_by, created_at) "
@@ -303,8 +299,8 @@ def list_predictions(limit: int = 50) -> list:
     if sb:
         try:
             return sb.select("predictions", {"order": "id.desc", "limit": limit})
-        except httpx.HTTPError:
-            pass
+        except Exception as exc:
+            _log_supabase_failure("list_predictions", exc)
     with _conn() as conn:
         rows = conn.execute(
             "SELECT * FROM predictions ORDER BY id DESC LIMIT ?", (limit,)
@@ -320,8 +316,8 @@ def insert_audit_log(actor: str, action: str, details: str = "") -> dict:
         try:
             result = sb.insert("audit_logs", record)
             return result[0] if result else record
-        except httpx.HTTPError:
-            pass
+        except Exception as exc:
+            _log_supabase_failure("insert_audit_log", exc)
     with _conn() as conn:
         cur = conn.execute(
             "INSERT INTO audit_logs (actor, action, details, created_at) VALUES (?,?,?,?)",
@@ -336,10 +332,30 @@ def list_audit_logs(limit: int = 200) -> list:
     if sb:
         try:
             return sb.select("audit_logs", {"order": "id.desc", "limit": limit})
-        except httpx.HTTPError:
-            pass
+        except Exception as exc:
+            _log_supabase_failure("list_audit_logs", exc)
     with _conn() as conn:
         rows = conn.execute(
             "SELECT * FROM audit_logs ORDER BY id DESC LIMIT ?", (limit,)
         ).fetchall()
         return [dict(r) for r in rows]
+    
+def delete_patient(patient_id: int) -> bool:
+    sb = get_supabase()
+
+    if sb:
+        try:
+            sb.delete(
+                "patients",
+                {"id": f"eq.{patient_id}"}
+            )
+            return True
+        except Exception as exc:
+            _log_supabase_failure("delete_patient", exc)
+
+    with _conn() as conn:
+        cur = conn.execute(
+            "DELETE FROM patients WHERE id=?",
+            (patient_id,)
+        )
+        return cur.rowcount > 0

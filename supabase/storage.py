@@ -1,10 +1,4 @@
-"""
-File uploads (CSV imports, generated PDF/CSV reports).
 
-Uses a Supabase Storage bucket ("uploads") via REST when configured;
-otherwise falls back to writing into the local ./uploads directory so the
-app keeps working without a Supabase project.
-"""
 import os
 import uuid
 from supabase.client import get_supabase
