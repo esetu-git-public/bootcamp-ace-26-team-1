@@ -350,17 +350,20 @@ http://localhost:8000/redoc
 ```
 
 ---
+## 🔐 Environment Variables
 
-# 🔐 Environment Variables
+Create a `.env` file in the project root and configure the following variables:
 
-| Variable                    | Description               | Required |
-| --------------------------- | ------------------------- | -------- |
-| SUPABASE_URL                | Supabase Project URL      | Yes      |
-| SUPABASE_KEY                | Supabase Service Role Key | Yes      |
-| DATABASE_URL                | PostgreSQL Database URL   | Yes      |
-| JWT_SECRET                  | JWT Secret Key            | Yes      |
-| JWT_ALGORITHM               | JWT Algorithm             | No       |
-| ACCESS_TOKEN_EXPIRE_MINUTES | JWT Expiration Time       | No       |
+| Variable | Description | Required |
+|---|---|---|
+| `SUPABASE_URL` | Supabase Project URL | Yes |
+| `SUPABASE_KEY` | Supabase Anon (Public) Key | Yes |
+| `SUPABASE_SERVICE_ROLE_KEY` | Supabase Service Role Key (Backend only) | Yes |
+| `SUPABASE_JWT_SECRET` | JWT Secret used by Supabase Authentication | Yes |
+| `ENVIRONMENT` | Application environment (`development` or `production`) | No |
+| `SECRET_KEY` | Secret key used to sign JWT access tokens | Yes |
+| `ALGORITHM` | JWT signing algorithm (Default: `HS256`) | No |
+| `ACCESS_TOKEN_EXPIRE_MINUTES` | JWT access token expiration time in minutes | No |
 
 ---
 
