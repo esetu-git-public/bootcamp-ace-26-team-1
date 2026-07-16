@@ -226,20 +226,64 @@ cd bootcamp-ace-26-team-1
 
 ## 2. Configure Environment Variables
 
-Create a `.env` file in the project root.
+Create a `.env` file in the project root and add the following variables:
 
 ```env
-SUPABASE_URL=https://your-project.supabase.co
-SUPABASE_KEY=your-service-role-key
+# Supabase Configuration
+SUPABASE_URL=
+SUPABASE_KEY=
+SUPABASE_SERVICE_ROLE_KEY=
+SUPABASE_JWT_SECRET=
 
-DATABASE_URL=postgresql://username:password@host:5432/postgres
+# Application Settings
+ENVIRONMENT=development
 
-JWT_SECRET=your-secret-key
-JWT_ALGORITHM=HS256
-ACCESS_TOKEN_EXPIRE_MINUTES=60
+# Security
+SECRET_KEY=
+ALGORITHM=HS256
+ACCESS_TOKEN_EXPIRE_MINUTES=120
 ```
 
----
+### How to Get the Required Values
+
+| Variable | How to Obtain |
+|----------|---------------|
+| **SUPABASE_URL** | Open your Supabase project → **Settings → API** → Copy the **Project URL**. |
+| **SUPABASE_KEY** | Go to **Settings → API** → Copy the **anon/public key**. |
+| **SUPABASE_SERVICE_ROLE_KEY** | Go to **Settings → API** → Copy the **service_role key**. **Keep this secret and never expose it in frontend code.** |
+| **SUPABASE_JWT_SECRET** | Go to **Settings → API** (or **Authentication → JWT**, depending on your Supabase version) → Copy the **JWT Secret**. |
+| **SECRET_KEY** | Generate a secure random key (32+ characters). You can generate one using Python or OpenSSL (commands below). |
+| **ALGORITHM** | Keep the default value: `HS256`. |
+| **ACCESS_TOKEN_EXPIRE_MINUTES** | JWT access token expiry time in minutes. Default: `120`. |
+| **ENVIRONMENT** | Use `development` for local development and `production` for deployment. |
+
+### Generate a Secure SECRET_KEY
+
+Using Python:
+
+```bash
+python -c "import secrets; print(secrets.token_hex(32))"
+```
+
+Example output:
+
+```text
+d4d3d0c5a9f56d4fdab32c8d6d8e4b83d8cf0c0d96e6c2a4fbe2d62d3b4d5f91
+```
+
+Or using OpenSSL:
+
+```bash
+openssl rand -hex 32
+```
+
+Copy the generated value into:
+
+```env
+SECRET_KEY=your_generated_secret_key
+```
+
+> **Security Note:** Never commit your `.env` file or share your `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_JWT_SECRET`, or `SECRET_KEY`. Ensure `.env` is listed in your `.gitignore`.
 
 ## 3. Install Dependencies
 
