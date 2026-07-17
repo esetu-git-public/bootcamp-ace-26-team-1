@@ -421,9 +421,7 @@ This project is developed for educational purposes as part of the Bootcamp AI Pr
 
 **Bootcamp ACE 2026 – Team 1**
 
-Hospital Readmission Prediction System using FastAPI, Supabase, and Machine Learning.
+Hospital Readmission Prediction System
 
 ```
 
-This README accurately reflects your **current project structure**, **current tech stack**, and **Random Forest-only implementation**, while keeping the same professional style as the PPE Compliance Detection System README.
-```
