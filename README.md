@@ -97,7 +97,7 @@ This system automates readmission prediction using a Random Forest Machine Learn
 
 ```text
 bootcamp-ace-26-team-1/
-│   .env
+│   .env  #place it in .gitignore
 │   .gitignore
 │   DBstructure.txt
 │   local_fallback.db
