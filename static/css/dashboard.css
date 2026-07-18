@@ -21,3 +21,29 @@
 .importance-bar-track{ flex:1; height:8px; background: var(--ink); border-radius:99px; overflow:hidden; }
 .importance-bar-fill{ height:100%; background: var(--signal); border-radius:99px; }
 .importance-value{ width:44px; text-align:right; font-family: var(--font-mono); font-size:12px; color: var(--text-dim); }
+
+/* =====================================================
+   Clinical Explainability Panel
+===================================================== */
+
+#explanationPanel{ margin-top:24px; padding-top:20px; border-top:1px solid var(--line);}
+
+#explanationSummary{ color:var(--text); font-size:14px; line-height:1.6; margin-bottom:18px;}
+
+.factor-card{ display:flex; align-items:center; gap:14px; padding:12px 0; border-bottom:1px solid rgba(255,255,255,.05);}
+
+.factor-card:last-child{ border-bottom:none; }
+
+.factor-icon{width:34px; height:34px; border-radius:50%; display:flex; justify-content:center; align-items:center; font-size:15px; font-weight:700; flex-shrink:0; }
+
+.factor-icon.risk-up{ background:rgba(242,84,91,.15); color:#F2545B; }
+
+.factor-icon.risk-down{ background:rgba(71,201,122,.15); color:#47C97A; }
+
+.factor-body{ flex:1; }
+
+.factor-title{ font-weight:600; color:var(--text);}
+
+.factor-value{ margin-top:2px; font-size:12px; color:var(--text-dim); font-family:var(--font-mono);}
+
+.factor-impact{ font-family:var(--font-mono); font-size:13px; color:var(--text-muted); min-width:55px; text-align:right; }
