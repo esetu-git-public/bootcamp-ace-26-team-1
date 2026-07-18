@@ -109,7 +109,11 @@ def delete_patient(
     patient_id: int,
     user: dict = Depends(get_current_user)
 ):
+    print(f"Deleting patient_id = {patient_id}")
+
     deleted = db.delete_patient(patient_id)
+
+    print(f"delete_patient() returned: {deleted}")
 
     if not deleted:
         raise HTTPException(

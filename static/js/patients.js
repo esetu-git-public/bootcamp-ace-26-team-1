@@ -1,3 +1,5 @@
+console.log("Updated patients.js loaded");
+
 (function () {
   const { api, formatApiError } = window.ReAdmitIQ;
 
