@@ -11,6 +11,7 @@ def predict_single(patient: dict, created_by: str) -> dict:
         result["explanation"] = predictor.explain_one(patient)
     except Exception as exc:
         # Never fail the prediction because explainability failed.
+        print("SHAP ERROR:", exc)
         print(
             f"[prediction_service.predict_single] "
             f"SHAP explanation failed: {exc}"

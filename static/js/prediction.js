@@ -1,408 +1,213 @@
 (function () {
+  const { api, formatApiError } = window.ReAdmitIQ;
+  const ARC_LENGTH = 314.16;
 
-    const { api, formatApiError } = window.ReAdmitIQ;
+  const colors = { Low: '#3FBFAD', Medium: '#F2B138', High: '#F2545B' };
+  const advice = {
+    Low: 'Standard discharge follow-up is likely sufficient.',
+    Medium: 'Consider a follow-up call within 7 days.',
+    High: 'Recommend care-coordinator outreach before discharge and a follow-up visit within 72 hours.',
+  };
 
-    const ARC_LENGTH = 314.16;
+  // Must match app/ml/predictor.py's FEATURE_LABELS exactly, since
+  // renderFeatureImportance() looks up SHAP direction by this label text.
+  const FEATURE_LABELS = {
+    age: 'Age',
+    gender_enc: 'Gender',
+    systolic_bp: 'Systolic blood pressure',
+    diastolic_bp: 'Diastolic blood pressure',
+    cholesterol: 'Cholesterol',
+    bmi: 'BMI',
+    diabetes_enc: 'Diabetes',
+    hypertension_enc: 'Hypertension',
+    medication_count: 'Medication count',
+    length_of_stay: 'Length of stay',
+    discharge_enc: 'Discharge destination',
+  };
 
-    const colors = {
-        Low: "#3FBFAD",
-        Medium: "#F2B138",
-        High: "#F2545B"
+  // The global feature-importance list doesn't change per-patient, so it's
+  // fetched once on page load (not returned by /api/prediction/predict) and
+  // re-rendered with fresh color-coding after each prediction.
+  let cachedImportances = null;
+
+  document.getElementById('predictForm').addEventListener('submit', submitPrediction);
+
+  async function submitPrediction(e) {
+    e.preventDefault();
+    const errorEl = document.getElementById('predictError');
+    errorEl.classList.remove('show');
+
+    const btn = document.getElementById('predictBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span> Scoring…';
+
+    clearExplainability();
+
+    const payload = {
+      patient_id: document.getElementById('p_patient_id').value ? Number(document.getElementById('p_patient_id').value) : null,
+      age: Number(document.getElementById('p_age').value),
+      gender: document.getElementById('p_gender').value,
+      blood_pressure: document.getElementById('p_bp').value,
+      cholesterol: Number(document.getElementById('p_cholesterol').value),
+      bmi: Number(document.getElementById('p_bmi').value),
+      diabetes: document.getElementById('p_diabetes').value,
+      hypertension: document.getElementById('p_hypertension').value,
+      medication_count: Number(document.getElementById('p_meds').value),
+      length_of_stay: Number(document.getElementById('p_los').value),
+      discharge_destination: document.getElementById('p_destination').value,
     };
 
-    const advice = {
-        Low: "Standard discharge follow-up is likely sufficient.",
-        Medium: "Consider a follow-up call within 7 days.",
-        High: "Recommend care-coordinator outreach before discharge and a follow-up visit within 72 hours."
-    };
+    try {
+      const response = await api('/api/prediction/predict', { method: 'POST', body: JSON.stringify(payload) });
+      if (!response) return;
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({}));
+        throw new Error(formatApiError(err.detail));
+      }
 
-    document
-        .getElementById("predictForm")
-        .addEventListener("submit", submitPrediction);
+      const result = await response.json();
+      renderGauge(result);
+      renderExplanation(result.explanation);
 
+      if (!cachedImportances) {
+        cachedImportances = await fetchFeatureImportance();
+      }
+      if (cachedImportances) {
+        renderFeatureImportance(cachedImportances, result.explanation);
+      }
+    } catch (err) {
+      errorEl.textContent = err.message;
+      errorEl.classList.add('show');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Calculate risk score';
+    }
+  }
 
-    async function submitPrediction(e) {
+  async function fetchFeatureImportance() {
+    try {
+      const res = await api('/api/prediction/feature-importance');
+      if (!res || !res.ok) return null;
+      return await res.json();
+    } catch {
+      return null;
+    }
+  }
 
-        e.preventDefault();
+  function renderGauge(result) {
+    const arc = document.getElementById('gaugeArc');
+    const score = document.getElementById('gaugeScore');
+    const label = document.getElementById('gaugeLabel');
+    const hint = document.getElementById('gaugeHint');
+    const color = colors[result.risk_label] || '#3FBFAD';
+    const dash = (result.risk_percent / 100) * ARC_LENGTH;
 
-        const errorEl = document.getElementById("predictError");
+    arc.setAttribute('stroke', color);
+    arc.style.transition = 'stroke-dasharray 0.6s ease';
+    arc.setAttribute('stroke-dasharray', `${dash} ${ARC_LENGTH}`);
 
-        errorEl.classList.remove("show");
+    score.textContent = `${result.risk_percent}%`;
+    score.style.color = color;
+    label.textContent = `${result.risk_label} risk of 30-day readmission`;
+    hint.textContent = advice[result.risk_label] || '';
+  }
 
-        const btn = document.getElementById("predictBtn");
+  function renderExplanation(explanation) {
+    const box = document.getElementById('explainBox');
+    if (!box) return;
+    box.classList.remove('hidden');
 
-        btn.disabled = true;
+    const summaryEl = document.getElementById('explainSummary');
+    const increasingEl = document.getElementById('riskIncreasingFactors');
+    const decreasingEl = document.getElementById('riskDecreasingFactors');
 
-        btn.innerHTML =
-            '<span class="spinner"></span> Scoring...';
-
-        clearExplainability();
-
-        const payload = {
-
-            patient_id:
-                document.getElementById("p_patient_id").value
-                    ? Number(document.getElementById("p_patient_id").value)
-                    : null,
-
-            age:
-                Number(document.getElementById("p_age").value),
-
-            gender:
-                document.getElementById("p_gender").value,
-
-            blood_pressure:
-                document.getElementById("p_bp").value,
-
-            cholesterol:
-                Number(document.getElementById("p_cholesterol").value),
-
-            bmi:
-                Number(document.getElementById("p_bmi").value),
-
-            diabetes:
-                document.getElementById("p_diabetes").value,
-
-            hypertension:
-                document.getElementById("p_hypertension").value,
-
-            medication_count:
-                Number(document.getElementById("p_meds").value),
-
-            length_of_stay:
-                Number(document.getElementById("p_los").value),
-
-            discharge_destination:
-                document.getElementById("p_destination").value
-        };
-
-        try {
-
-            const response = await api(
-                "/api/prediction/predict",
-                {
-                    method: "POST",
-                    body: JSON.stringify(payload)
-                }
-            );
-
-            if (!response)
-                return;
-
-            if (!response.ok) {
-
-                const err =
-                    await response.json().catch(() => ({}));
-
-                throw new Error(
-                    formatApiError(err.detail)
-                );
-            }
-
-            const result =
-                await response.json();
-
-            renderGauge(result);
-
-            if (result.explanation) {
-                renderExplanation(result.explanation);
-            }
-
-            if (result.feature_importance) {
-                renderFeatureImportance(
-                    result.feature_importance,
-                    result.explanation
-                );
-            }
-
-        }
-
-        catch (err) {
-
-            errorEl.textContent = err.message;
-
-            errorEl.classList.add("show");
-        }
-
-        finally {
-
-            btn.disabled = false;
-
-            btn.textContent =
-                "Calculate risk score";
-        }
+    if (!explanation) {
+      summaryEl.textContent = 'An explanation could not be generated for this prediction.';
+      increasingEl.innerHTML = '';
+      decreasingEl.innerHTML = '';
+      return;
     }
 
+    summaryEl.textContent = explanation.summary || '';
 
-    function renderGauge(result) {
+    const factors = explanation.top_factors || [];
+    const increasing = factors.filter(f => f.direction === 'increases_risk');
+    const decreasing = factors.filter(f => f.direction === 'decreases_risk');
 
-        const arc =
-            document.getElementById("gaugeArc");
+    increasingEl.innerHTML = renderFactorGroup('Factors increasing risk', increasing, 'up');
+    decreasingEl.innerHTML = renderFactorGroup('Factors decreasing risk', decreasing, 'down');
+  }
 
-        const score =
-            document.getElementById("gaugeScore");
+  function renderFactorGroup(heading, factors, dir) {
+    if (!factors.length) return '';
+    const cards = factors.map(f => `
+      <div class="factor-card">
+        <div class="factor-icon ${dir === 'up' ? 'risk-up' : 'risk-down'}">${dir === 'up' ? '▲' : '▼'}</div>
+        <div class="factor-body">
+          <div class="factor-title">${f.label}</div>
+          <div class="factor-value">${f.value}</div>
+        </div>
+        <div class="factor-impact">${(f.impact * 100).toFixed(1)}%</div>
+      </div>
+    `).join('');
+    return `<div class="factor-group-heading">${heading}</div>${cards}`;
+  }
 
-        const label =
-            document.getElementById("gaugeLabel");
+  function renderFeatureImportance(importances, explanation) {
+    const container = document.getElementById('featureImportance');
+    if (!container || !importances) return;
+    container.innerHTML = '';
 
-        const hint =
-            document.getElementById("gaugeHint");
-
-        const color =
-            colors[result.risk_label] || "#3FBFAD";
-
-        const dash =
-            (result.risk_percent / 100) * ARC_LENGTH;
-
-        arc.setAttribute(
-            "stroke",
-            color
-        );
-
-        arc.style.transition =
-            "stroke-dasharray 0.6s ease";
-
-        arc.setAttribute(
-            "stroke-dasharray",
-            `${dash} ${ARC_LENGTH}`
-        );
-
-        score.textContent =
-            `${result.risk_percent}%`;
-
-        score.style.color = color;
-
-        label.textContent =
-            `${result.risk_label} risk of 30-day readmission`;
-
-        hint.textContent =
-            advice[result.risk_label] || "";
-    }
-        function renderExplanation(explanation) {
-
-        const panel =
-            document.getElementById("explanationPanel");
-
-        if (!panel || !explanation)
-            return;
-
-        panel.style.display = "block";
-
-        const summary =
-            document.getElementById("explanationSummary");
-
-        summary.textContent =
-            explanation.summary || "";
-
-        const factors =
-            document.getElementById("topFactors");
-
-        factors.innerHTML = "";
-
-        (explanation.top_factors || []).forEach(factor => {
-
-            const card =
-                document.createElement("div");
-
-            card.className =
-                "factor-card";
-
-            const increasing =
-                factor.direction === "increases_risk";
-
-            card.innerHTML = `
-
-                <div class="factor-icon ${increasing ? "risk-up" : "risk-down"}">
-
-                    ${increasing ? "▲" : "▼"}
-
-                </div>
-
-                <div class="factor-body">
-
-                    <div class="factor-title">
-
-                        ${factor.label}
-
-                    </div>
-
-                    <div class="factor-value">
-
-                        ${factor.value}
-
-                    </div>
-
-                </div>
-
-                <div class="factor-impact">
-
-                    ${(factor.impact * 100).toFixed(1)}%
-
-                </div>
-
-            `;
-
-            factors.appendChild(card);
-
-        });
-
+    const directions = {};
+    if (explanation && explanation.top_factors) {
+      explanation.top_factors.forEach(f => { directions[f.label] = f.direction; });
     }
 
-
-
-    function renderFeatureImportance(importances, explanation) {
-
-        const container =
-            document.getElementById("featureImportance");
-
-        if (!container || !importances)
-            return;
-
-        container.innerHTML = "";
-
-        const directions = {};
-
-        if (explanation && explanation.top_factors) {
-
-            explanation.top_factors.forEach(f => {
-
-                directions[f.label] = f.direction;
-
-            });
-
-        }
-
-        const entries =
-            Object.entries(importances);
-
-        const max =
-            Math.max(...entries.map(e => e[1]));
-
-        entries
-            .slice(0, 8)
-            .forEach(([feature, value]) => {
-
-                const label =
-                    formatLabel(feature);
-
-                const direction =
-                    directions[label];
-
-                let color =
-                    "#3FBFAD";
-
-                if (direction === "increases_risk")
-                    color = "#F2545B";
-
-                if (direction === "decreases_risk")
-                    color = "#47C97A";
-
-                const row =
-                    document.createElement("div");
-
-                row.className =
-                    "importance-row";
-
-                row.innerHTML = `
-
-                    <div class="importance-label">
-
-                        ${label}
-
-                    </div>
-
-                    <div class="importance-bar-track">
-
-                        <div
-                            class="importance-bar-fill"
-
-                            style="
-                                width:${(value/max)*100}%;
-                                background:${color};
-                            ">
-
-                        </div>
-
-                    </div>
-
-                    <div class="importance-value">
-
-                        ${value.toFixed(3)}
-
-                    </div>
-
-                `;
-
-                container.appendChild(row);
-
-            });
-
-    }
-
-        function clearExplainability() {
-
-        const panel =
-            document.getElementById("explanationPanel");
-
-        if (panel) {
-            panel.style.display = "none";
-        }
-
-        const summary =
-            document.getElementById("explanationSummary");
-
-        if (summary) {
-            summary.textContent = "";
-        }
-
-        const factors =
-            document.getElementById("topFactors");
-
-        if (factors) {
-            factors.innerHTML = "";
-        }
-
-        const importance =
-            document.getElementById("featureImportance");
-
-        if (importance) {
-            importance.innerHTML = "";
-        }
-
-    }
-
-
-
-    function formatLabel(feature) {
-
-        const labels = {
-
-            age: "Age",
-
-            gender_enc: "Gender",
-
-            systolic_bp: "Systolic BP",
-
-            diastolic_bp: "Diastolic BP",
-
-            cholesterol: "Cholesterol",
-
-            bmi: "BMI",
-
-            diabetes_enc: "Diabetes",
-
-            hypertension_enc: "Hypertension",
-
-            medication_count: "Medication Count",
-
-            length_of_stay: "Length of Stay",
-
-            discharge_enc: "Discharge Destination"
-
-        };
-
-        return labels[feature] || feature;
-
-    }
-
+    const entries = Object.entries(importances);
+    const max = Math.max(...entries.map(e => e[1]), 0.0001);
+
+    entries.slice(0, 8).forEach(([feature, value]) => {
+      const label = formatLabel(feature);
+      const direction = directions[label];
+      let color = '#3FBFAD';
+      if (direction === 'increases_risk') color = '#F2545B';
+      if (direction === 'decreases_risk') color = '#47C97A';
+
+      const row = document.createElement('div');
+      row.className = 'importance-row';
+      row.innerHTML = `
+        <div class="importance-label">${label}</div>
+        <div class="importance-bar-track">
+          <div class="importance-bar-fill" style="width:${(value / max) * 100}%; background:${color};"></div>
+        </div>
+        <div class="importance-value">${value.toFixed(3)}</div>
+      `;
+      container.appendChild(row);
+    });
+  }
+
+  function clearExplainability() {
+    const box = document.getElementById('explainBox');
+    if (box) box.classList.add('hidden');
+
+    const summary = document.getElementById('explainSummary');
+    if (summary) summary.textContent = '';
+
+    const increasing = document.getElementById('riskIncreasingFactors');
+    if (increasing) increasing.innerHTML = '';
+
+    const decreasing = document.getElementById('riskDecreasingFactors');
+    if (decreasing) decreasing.innerHTML = '';
+  }
+
+  function formatLabel(feature) {
+    return FEATURE_LABELS[feature] || feature;
+  }
+
+  // Feature importance is a static property of the trained model, not
+  // per-patient, so load it once up front rather than waiting on a prediction.
+  (async function preloadFeatureImportance() {
+    cachedImportances = await fetchFeatureImportance();
+    if (cachedImportances) renderFeatureImportance(cachedImportances, null);
+  })();
 })();
