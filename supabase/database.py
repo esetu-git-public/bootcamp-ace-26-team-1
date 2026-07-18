@@ -345,17 +345,24 @@ def delete_patient(patient_id: int) -> bool:
 
     if sb:
         try:
-            sb.delete(
+            deleted = sb.delete(
                 "patients",
-                {"id": f"eq.{patient_id}"}
+                {"patient_id": f"eq.{patient_id}"}
             )
-            return True
+
+            return len(deleted) > 0
+
         except Exception as exc:
             _log_supabase_failure("delete_patient", exc)
 
     with _conn() as conn:
+
         cur = conn.execute(
-            "DELETE FROM patients WHERE id=?",
+            """
+            DELETE FROM patients
+            WHERE patient_id = ?
+            """,
             (patient_id,)
         )
+
         return cur.rowcount > 0
