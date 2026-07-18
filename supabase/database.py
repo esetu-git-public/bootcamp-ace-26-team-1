@@ -339,3 +339,30 @@ def list_audit_logs(limit: int = 200) -> list:
             "SELECT * FROM audit_logs ORDER BY id DESC LIMIT ?", (limit,)
         ).fetchall()
         return [dict(r) for r in rows]
+    
+def delete_patient(patient_id: int) -> bool:
+    sb = get_supabase()
+
+    if sb:
+        try:
+            deleted = sb.delete(
+                "patients",
+                {"patient_id": f"eq.{patient_id}"}
+            )
+
+            return len(deleted) > 0
+
+        except Exception as exc:
+            _log_supabase_failure("delete_patient", exc)
+
+    with _conn() as conn:
+
+        cur = conn.execute(
+            """
+            DELETE FROM patients
+            WHERE patient_id = ?
+            """,
+            (patient_id,)
+        )
+
+        return cur.rowcount > 0
