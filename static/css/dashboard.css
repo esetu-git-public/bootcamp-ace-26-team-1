@@ -25,25 +25,68 @@
 /* =====================================================
    Clinical Explainability Panel
 ===================================================== */
+.explain-header{ display:flex; align-items:center; gap:9px; margin-bottom:16px; }
+.explain-icon{
+  width:30px; height:30px; border-radius:50%; flex:0 0 auto;
+  background: rgba(63,191,173,0.12); display:flex; align-items:center; justify-content:center; font-size:15px;
+}
+.explain-title{ font-size:15px; font-weight:700; color: var(--text); letter-spacing:-0.01em; }
 
-#explanationPanel{ margin-top:24px; padding-top:20px; border-top:1px solid var(--line);}
+/* Summary rendered as a callout instead of plain paragraph text */
+#explainSummary{
+  background: linear-gradient(135deg, rgba(63,191,173,0.09), rgba(63,191,173,0.02));
+  border: 1px solid rgba(63,191,173,0.25);
+  border-left: 3px solid var(--signal);
+  border-radius: var(--radius-md);
+  padding: 14px 16px;
+  color: var(--text);
+  font-size: 13.5px;
+  line-height: 1.65;
+  margin: 0 0 20px;
+}
 
-#explanationSummary{ color:var(--text); font-size:14px; line-height:1.6; margin-bottom:18px;}
+.factor-group{ margin-bottom:4px; }
+.factor-group-heading{
+  display:inline-flex; align-items:center; gap:6px;
+  font-family: var(--font-mono); font-size:10.5px; letter-spacing:.06em; text-transform:uppercase;
+  padding: 4px 11px; border-radius: 99px; margin: 4px 0 10px;
+}
+#riskIncreasingFactors .factor-group-heading{ background: rgba(242,84,91,0.12); color: var(--risk-high); }
+#riskDecreasingFactors .factor-group-heading{ background: rgba(63,191,173,0.12); color: var(--risk-low); }
 
-.factor-card{ display:flex; align-items:center; gap:14px; padding:12px 0; border-bottom:1px solid rgba(255,255,255,.05);}
+.factor-card{
+  display:flex; align-items:center; gap:12px; padding:11px 13px; margin-bottom:8px;
+  background: var(--panel-2); border:1px solid var(--line); border-radius: var(--radius-md);
+  transition: transform .15s ease, border-color .15s ease;
+}
+.factor-card:hover{ transform: translateX(2px); border-color: var(--signal-dim); }
 
-.factor-card:last-child{ border-bottom:none; }
+.factor-rank{
+  width:19px; height:19px; border-radius:50%; flex:0 0 auto;
+  background: var(--ink); border:1px solid var(--line);
+  display:flex; align-items:center; justify-content:center;
+  font-family: var(--font-mono); font-size:10px; color: var(--text-dim);
+}
+.factor-icon{
+  width:28px; height:28px; border-radius:50%; flex:0 0 auto; font-size:12px;
+  display:flex; align-items:center; justify-content:center;
+}
+.factor-icon.risk-up{ background: rgba(242,84,91,.15); color: var(--risk-high); }
+.factor-icon.risk-down{ background: rgba(63,191,173,.15); color: var(--risk-low); }
 
-.factor-icon{width:34px; height:34px; border-radius:50%; display:flex; justify-content:center; align-items:center; font-size:15px; font-weight:700; flex-shrink:0; }
+.factor-body{ flex:1; min-width:0; }
+.factor-title{ font-weight:600; color: var(--text); font-size:13.5px; }
+.factor-value{ margin-top:2px; font-size:11.5px; color: var(--text-dim); font-family: var(--font-mono); }
 
-.factor-icon.risk-up{ background:rgba(242,84,91,.15); color:#F2545B; }
+.factor-impact-wrap{ display:flex; flex-direction:column; align-items:flex-end; gap:5px; flex:0 0 auto; }
+.factor-impact{ font-family: var(--font-mono); font-size:12px; color: var(--text-muted); }
+.factor-impact-track{ width:58px; height:5px; background: var(--ink); border-radius:99px; overflow:hidden; }
+.factor-impact-fill{ height:100%; border-radius:99px; transition: width .4s ease; }
+.factor-impact-fill.risk-up{ background: var(--risk-high); }
+.factor-impact-fill.risk-down{ background: var(--risk-low); }
 
-.factor-icon.risk-down{ background:rgba(71,201,122,.15); color:#47C97A; }
-
-.factor-body{ flex:1; }
-
-.factor-title{ font-weight:600; color:var(--text);}
-
-.factor-value{ margin-top:2px; font-size:12px; color:var(--text-dim); font-family:var(--font-mono);}
-
-.factor-impact{ font-family:var(--font-mono); font-size:13px; color:var(--text-muted); min-width:55px; text-align:right; }
+.explain-divider{ border:none; border-top:1px solid var(--line); margin:22px 0 16px; }
+.importance-heading{
+  font-family: var(--font-mono); font-size:10.5px; letter-spacing:.08em; text-transform:uppercase;
+  color: var(--text-dim); margin:0 0 12px;
+}

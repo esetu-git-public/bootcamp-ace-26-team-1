@@ -133,23 +133,36 @@
     const factors = explanation.top_factors || [];
     const increasing = factors.filter(f => f.direction === 'increases_risk');
     const decreasing = factors.filter(f => f.direction === 'decreases_risk');
+    // Scale each card's impact bar relative to the single largest factor
+    // across BOTH groups, so bar length is comparable at a glance.
+    const maxImpact = Math.max(...factors.map(f => f.impact), 0.0001);
 
-    increasingEl.innerHTML = renderFactorGroup('Factors increasing risk', increasing, 'up');
-    decreasingEl.innerHTML = renderFactorGroup('Factors decreasing risk', decreasing, 'down');
+    increasingEl.innerHTML = renderFactorGroup('Factors increasing risk', increasing, 'up', maxImpact);
+    decreasingEl.innerHTML = renderFactorGroup('Factors decreasing risk', decreasing, 'down', maxImpact);
   }
 
-  function renderFactorGroup(heading, factors, dir) {
+  function renderFactorGroup(heading, factors, dir, maxImpact) {
     if (!factors.length) return '';
-    const cards = factors.map(f => `
+    const icon = dir === 'up' ? '▲' : '▼';
+    const dirClass = dir === 'up' ? 'risk-up' : 'risk-down';
+
+    const cards = factors.map((f, idx) => `
       <div class="factor-card">
-        <div class="factor-icon ${dir === 'up' ? 'risk-up' : 'risk-down'}">${dir === 'up' ? '▲' : '▼'}</div>
+        <div class="factor-rank">${idx + 1}</div>
+        <div class="factor-icon ${dirClass}">${icon}</div>
         <div class="factor-body">
           <div class="factor-title">${f.label}</div>
           <div class="factor-value">${f.value}</div>
         </div>
-        <div class="factor-impact">${(f.impact * 100).toFixed(1)}%</div>
+        <div class="factor-impact-wrap">
+          <div class="factor-impact">${(f.impact * 100).toFixed(1)}%</div>
+          <div class="factor-impact-track">
+            <div class="factor-impact-fill ${dirClass}" style="width:${(f.impact / maxImpact) * 100}%"></div>
+          </div>
+        </div>
       </div>
     `).join('');
+
     return `<div class="factor-group-heading">${heading}</div>${cards}`;
   }
 
