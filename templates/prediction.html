@@ -59,9 +59,46 @@
         <div class="gauge-label" id="gaugeLabel">Awaiting input</div>
       </div>
     </div>
-    <div class="hint" id="gaugeHint" style="text-align:center; margin-top:8px;">
-      Fill out the form and calculate to see a risk score here.
+<div class="hint" id="gaugeHint" style="text-align:center; margin-top:8px;">
+    Fill out the form and calculate to see a risk score here.
+</div>
+
+<!-- ================= Clinical Explainability ================= -->
+
+<div class="explain-box hidden" id="explainBox">
+
+    <div class="explain-header">
+        <span class="explain-icon">🩺</span>
+        <span class="explain-title">
+            Clinical Explainability
+        </span>
     </div>
+
+    <p
+        class="explain-summary"
+        id="explainSummary">
+    </p>
+
+    <div
+        id="riskIncreasingFactors"
+        class="factor-group">
+    </div>
+
+    <div
+        id="riskDecreasingFactors"
+        class="factor-group">
+    </div>
+
+    <hr class="explain-divider">
+
+    <h4 class="importance-heading">
+        Feature Importance
+    </h4>
+
+    <div id="featureImportance">
+    </div>
+
+</div>
   </div>
 </div>
 {% endblock %}
