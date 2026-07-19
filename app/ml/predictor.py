@@ -1,13 +1,3 @@
-"""
-Loads the trained RandomForest model + scaler and exposes
-prediction and SHAP explainability APIs.
-
-Compatible with:
-- Python 3.11
-- SHAP 0.51+
-- scikit-learn RandomForestClassifier
-"""
-
 import os
 import joblib
 import numpy as np
@@ -16,325 +6,267 @@ import shap
 from app.ml.feature_engineering import build_feature_row
 from app.utils.helpers import risk_bucket
 
-# ---------------------------------------------------------------------
-# Model paths
-# ---------------------------------------------------------------------
-
 _DIR = os.path.dirname(__file__)
-
 _MODEL_PATH = os.path.join(_DIR, "model.pkl")
 _SCALER_PATH = os.path.join(_DIR, "scaler.pkl")
 _FEATURES_PATH = os.path.join(_DIR, "feature_cols.pkl")
-
-# ---------------------------------------------------------------------
-# Cached objects
-# ---------------------------------------------------------------------
 
 _model = None
 _scaler = None
 _feature_cols = None
 _explainer = None
 
-# ---------------------------------------------------------------------
-# Friendly feature names
-# ---------------------------------------------------------------------
-
 FEATURE_LABELS = {
     "age": "Age",
     "gender_enc": "Gender",
-    "systolic_bp": "Systolic Blood Pressure",
-    "diastolic_bp": "Diastolic Blood Pressure",
+    "systolic_bp": "Systolic blood pressure",
+    "diastolic_bp": "Diastolic blood pressure",
     "cholesterol": "Cholesterol",
     "bmi": "BMI",
     "diabetes_enc": "Diabetes",
     "hypertension_enc": "Hypertension",
-    "medication_count": "Medication Count",
-    "length_of_stay": "Length of Stay",
-    "discharge_enc": "Discharge Destination",
+    "medication_count": "Medication count",
+    "length_of_stay": "Length of stay",
+    "discharge_enc": "Discharge destination",
 }
-
-# ---------------------------------------------------------------------
-# Load model once
-# ---------------------------------------------------------------------
 
 
 def _load():
     global _model, _scaler, _feature_cols
-
     if _model is None:
-
         if not os.path.exists(_MODEL_PATH):
             raise RuntimeError(
-                "Model artifacts not found.\n"
-                "Run train_model.py first."
+                "Model artifacts not found. Run `python train_model.py` first "
+                "to generate app/ml/model.pkl and scaler.pkl."
             )
-
         _model = joblib.load(_MODEL_PATH)
         _scaler = joblib.load(_SCALER_PATH)
         _feature_cols = joblib.load(_FEATURES_PATH)
-
     return _model, _scaler, _feature_cols
-
-
-# ---------------------------------------------------------------------
-# Create SHAP explainer once
-# ---------------------------------------------------------------------
 
 
 def _get_explainer():
     global _explainer
-
     if _explainer is None:
         model, _, _ = _load()
         _explainer = shap.TreeExplainer(model)
-
     return _explainer
 
 
-# ---------------------------------------------------------------------
-# Convert encoded values into readable text
-# ---------------------------------------------------------------------
-
-
-def _format_value(feature, value):
-
+def _format_value(feature: str, value) -> str:
     if feature == "gender_enc":
-        return {
-            0: "Male",
-            1: "Female",
-            2: "Other"
-        }.get(value, str(value))
+        return {0: "Male", 1: "Female", 2: "Other"}.get(value, str(value))
+    if feature == "discharge_enc":
+        return {0: "Home", 1: "Rehab", 2: "Nursing Facility"}.get(value, str(value))
+    if feature in ("diabetes_enc", "hypertension_enc"):
+        return "Yes" if value == 1 else "No"
+    return str(value)
+
+
+def _humanize_factor(feature: str, raw_value) -> str:
+    """
+    Turns a raw feature + value into a natural clause a clinician might
+    actually write, e.g. "an elevated BMI of 33.2" instead of "BMI (33.2)".
+    Demographic fields (age, gender) are phrased descriptively rather than
+    causally, since a SHAP weight reflects a statistical pattern the model
+    picked up, not a clinical mechanism.
+    """
+    if feature == "age":
+        age = raw_value
+        if age >= 80:
+            return f"the patient's advanced age ({age})"
+        if age >= 65:
+            return f"the patient's older age ({age})"
+        if age < 40:
+            return f"the patient's relatively young age ({age})"
+        return f"the patient's age ({age})"
+
+    if feature == "bmi":
+        bmi = raw_value
+        if bmi >= 30:
+            return f"a high BMI of {bmi}"
+        if bmi >= 25:
+            return f"an elevated BMI of {bmi}"
+        if bmi < 18.5:
+            return f"a low BMI of {bmi}"
+        return f"a BMI of {bmi} in the typical range"
+
+    if feature == "cholesterol":
+        chol = raw_value
+        if chol >= 240:
+            return f"high cholesterol ({chol} mg/dL)"
+        if chol >= 200:
+            return f"borderline-high cholesterol ({chol} mg/dL)"
+        return f"normal-range cholesterol ({chol} mg/dL)"
+
+    if feature == "systolic_bp":
+        bp = raw_value
+        if bp >= 140:
+            return f"high systolic blood pressure ({bp} mmHg)"
+        if bp >= 120:
+            return f"elevated systolic blood pressure ({bp} mmHg)"
+        return f"normal systolic blood pressure ({bp} mmHg)"
+
+    if feature == "diastolic_bp":
+        bp = raw_value
+        if bp >= 90:
+            return f"high diastolic blood pressure ({bp} mmHg)"
+        if bp >= 80:
+            return f"elevated diastolic blood pressure ({bp} mmHg)"
+        return f"normal diastolic blood pressure ({bp} mmHg)"
+
+    if feature == "medication_count":
+        n = raw_value
+        if n >= 8:
+            return f"a high number of medications ({n})"
+        if n <= 2:
+            return f"a small number of medications ({n})"
+        return f"a moderate number of medications ({n})"
+
+    if feature == "length_of_stay":
+        days = raw_value
+        if days <= 2:
+            return f"a short {days}-day hospital stay"
+        if days >= 10:
+            return f"an extended {days}-day hospital stay"
+        return f"a {days}-day hospital stay"
 
     if feature == "diabetes_enc":
-        return "Yes" if value == 1 else "No"
+        return "a history of diabetes" if raw_value == 1 else "no history of diabetes"
 
     if feature == "hypertension_enc":
-        return "Yes" if value == 1 else "No"
+        return "a history of hypertension" if raw_value == 1 else "no history of hypertension"
 
     if feature == "discharge_enc":
-        return {
-            0: "Home",
-            1: "Rehab",
-            2: "Nursing Facility"
-        }.get(value, str(value))
+        dest = {0: "being discharged home", 1: "being discharged to a rehabilitation facility",
+                2: "being discharged to a nursing facility"}.get(raw_value, "the discharge destination")
+        return dest
 
-    return str(value)
-# ---------------------------------------------------------------------
-# Single prediction
-# ---------------------------------------------------------------------
+    if feature == "gender_enc":
+        gender = {0: "male", 1: "female", 2: "other"}.get(raw_value, str(raw_value))
+        return f"the patient being recorded as {gender}"
+
+    return f"{FEATURE_LABELS.get(feature, feature)} ({raw_value})"
 
 
 def predict_one(patient: dict) -> dict:
-    """
-    Predict readmission risk for a single patient.
-    """
-
     model, scaler, _ = _load()
-
     row = build_feature_row(patient)
-
     X = scaler.transform(np.array([row]))
-
-    probability = float(model.predict_proba(X)[0][1])
-
+    proba = float(model.predict_proba(X)[0][1])
+    label = risk_bucket(proba)
     return {
-        "risk_score": round(probability, 4),
-        "risk_percent": round(probability * 100, 1),
-        "risk_label": risk_bucket(probability),
+        "risk_score": round(proba, 4),
+        "risk_percent": round(proba * 100, 1),
+        "risk_label": label,
     }
 
 
-# ---------------------------------------------------------------------
-# SHAP Explainability
-# ---------------------------------------------------------------------
-
-
-def explain_one(patient: dict, top_n: int = 5) -> dict:
+def explain_one(patient: dict, top_n: int = 4) -> dict:
     """
-    Returns a patient-specific explanation using SHAP.
-
-    Output:
-    {
-        summary: "...",
-        top_factors: [...]
-    }
+    Returns the top contributing factors behind a single prediction, using
+    SHAP values from the trained RandomForest, plus a natural-language
+    summary written the way a clinician might phrase it in a note -- rather
+    than a mechanical "Feature (value)" list -- for display under the risk
+    gauge. Hedged language ("appears associated with", "the model weighted")
+    is used deliberately rather than causal claims ("caused", "will lead
+    to"), since SHAP values describe what the model learned, not a
+    validated clinical mechanism.
     """
-
-    _, scaler, feature_cols = _load()
-
+    model, scaler, feature_cols = _load()
     explainer = _get_explainer()
 
     row = build_feature_row(patient)
-
     X = scaler.transform(np.array([row]))
 
     shap_values = explainer.shap_values(X)
-
-    # Compatible with SHAP 0.51+
     if isinstance(shap_values, list):
-        class_values = np.asarray(shap_values[1])[0]
+        class1_values = np.asarray(shap_values[1])[0]
     else:
         arr = np.asarray(shap_values)
-
         if arr.ndim == 3:
-            class_values = arr[0, :, 1]
+            class1_values = arr[0, :, 1]
         else:
-            class_values = arr[0]
+            class1_values = arr[0]
 
     contributions = []
+    for feat, raw_value, shap_val in zip(feature_cols, row, class1_values):
+        contributions.append({
+            "feature": feat,
+            "label": FEATURE_LABELS.get(feat, feat),
+            "value": _format_value(feat, raw_value),
+            "note": _humanize_factor(feat, raw_value),
+            "shap_value": round(float(shap_val), 5),
+        })
 
-    for feature, value, shap_value in zip(
-        feature_cols,
-        row,
-        class_values,
-    ):
-
-        contributions.append(
-            {
-                "feature": feature,
-                "label": FEATURE_LABELS.get(feature, feature),
-                "value": _format_value(feature, value),
-                "impact": round(abs(float(shap_value)), 5),
-                "direction": (
-                    "increases_risk"
-                    if shap_value > 0
-                    else "decreases_risk"
-                ),
-                "shap_value": float(shap_value),
-            }
-        )
-
-    contributions.sort(
-        key=lambda x: abs(x["shap_value"]),
-        reverse=True,
-    )
-
+    contributions.sort(key=lambda c: -abs(c["shap_value"]))
     top = contributions[:top_n]
 
-    higher = [
-        f"{x['label']} ({x['value']})"
-        for x in top
-        if x["direction"] == "increases_risk"
-    ]
+    increasing = [c for c in top if c["shap_value"] > 0]
+    decreasing = [c for c in top if c["shap_value"] < 0]
 
-    lower = [
-        f"{x['label']} ({x['value']})"
-        for x in top
-        if x["direction"] == "decreases_risk"
-    ]
+    def join_clauses(clauses: list) -> str:
+        if len(clauses) == 1:
+            return clauses[0]
+        if len(clauses) == 2:
+            return f"{clauses[0]} and {clauses[1]}"
+        return ", ".join(clauses[:-1]) + f", and {clauses[-1]}"
 
-    summary_parts = []
+    sentences = []
+    if increasing:
+        clause = join_clauses([c["note"] for c in increasing])
+        verb = "appear" if len(increasing) > 1 else "appears"
+        sentences.append(f"{clause[0].upper()}{clause[1:]} {verb} to be pushing this patient's predicted risk higher.")
+    if decreasing:
+        clause = join_clauses([c["note"] for c in decreasing])
+        verb = "appear" if len(decreasing) > 1 else "appears"
+        lead = "On the other hand, " if increasing else ""
+        sentences.append(f"{lead}{clause[0].upper() if not lead else clause[0]}{clause[1:]} {verb} to be working in this patient's favor, pulling the predicted risk back down.")
 
-    if higher:
-        summary_parts.append(
-            "Risk increased mainly because of "
-            + ", ".join(higher)
-        )
-
-    if lower:
-        summary_parts.append(
-            "Risk reduced because of "
-            + ", ".join(lower)
-        )
-
-    if summary_parts:
-        summary = ". ".join(summary_parts) + "."
+    if sentences:
+        summary = " ".join(sentences)
     else:
-        summary = (
-            "No single clinical factor dominated this prediction. "
-            "The model considered several features with relatively "
-            "small individual contributions."
-        )
+        summary = "No single factor stood out strongly for this patient — the prediction reflects a mix of small, roughly offsetting effects."
+
+    caveat = (
+        "This reflects patterns the model learned from historical data, not a clinical diagnosis. "
+        "Use it alongside your own clinical judgment."
+    )
 
     return {
         "summary": summary,
+        "caveat": caveat,
         "top_factors": [
             {
-                "label": item["label"],
-                "value": item["value"],
-                "direction": item["direction"],
-                "impact": item["impact"],
+                "label": c["label"],
+                "value": c["value"],
+                "note": c["note"],
+                "direction": "increases_risk" if c["shap_value"] > 0 else "decreases_risk",
+                "impact": abs(c["shap_value"]),
             }
-            for item in top
+            for c in top
         ],
     }
-# ---------------------------------------------------------------------
-# Batch prediction
-# ---------------------------------------------------------------------
 
 
 def predict_batch(patients: list) -> list:
-    """
-    Predict readmission risk for multiple patients.
-    """
-
     model, scaler, _ = _load()
-
-    rows = [build_feature_row(patient) for patient in patients]
-
+    rows = [build_feature_row(p) for p in patients]
     X = scaler.transform(np.array(rows))
-
-    probabilities = model.predict_proba(X)[:, 1]
-
+    probs = model.predict_proba(X)[:, 1]
     return [
         {
-            "risk_score": round(float(probability), 4),
-            "risk_percent": round(float(probability) * 100, 1),
-            "risk_label": risk_bucket(float(probability)),
+            "risk_score": round(float(p), 4),
+            "risk_percent": round(float(p) * 100, 1),
+            "risk_label": risk_bucket(float(p)),
         }
-        for probability in probabilities
+        for p in probs
     ]
-
-
-# ---------------------------------------------------------------------
-# Global feature importance
-# ---------------------------------------------------------------------
 
 
 def feature_importance() -> dict:
-    """
-    Returns the trained Random Forest's global feature importances.
-
-    Used for analytics pages and optional visualizations.
-    """
-
     model, _, feature_cols = _load()
-
-    importance = [
-        round(float(value), 4)
-        for value in model.feature_importances_
-    ]
-
-    ranked = sorted(
-        zip(feature_cols, importance),
-        key=lambda item: item[1],
-        reverse=True,
-    )
-
-    return dict(ranked)
-
-
-# ---------------------------------------------------------------------
-# Convenience helper
-# ---------------------------------------------------------------------
-
-
-def model_loaded() -> bool:
-    """
-    Returns True if the model has already been loaded into memory.
-    """
-
-    return _model is not None
-
-
-# ---------------------------------------------------------------------
-# Warm-start model
-# ---------------------------------------------------------------------
-
-try:
-    _load()
-except Exception:
-    # During development or before train_model.py has been run,
-    # the artifacts may not yet exist. We simply defer loading
-    # until the first prediction request.
-    pass
+    return dict(sorted(
+        zip(feature_cols, [round(float(x), 4) for x in model.feature_importances_]),
+        key=lambda kv: -kv[1],
+    ))

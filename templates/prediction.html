@@ -2,6 +2,7 @@
 {% block title %}Risk Prediction{% endblock %}
 {% block page_title %}Risk Prediction{% endblock %}
 {% block page_sub %}Score a discharge for 30-day readmission risk{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="/static/css/dashboard.css">{% endblock %}
 
 {% block content %}
 <div class="grid-2">
@@ -88,6 +89,8 @@
         id="riskDecreasingFactors"
         class="factor-group">
     </div>
+
+    <p class="explain-caveat" id="explainCaveat"></p>
 
     <hr class="explain-divider">
 
