@@ -120,21 +120,22 @@
     const summaryEl = document.getElementById('explainSummary');
     const increasingEl = document.getElementById('riskIncreasingFactors');
     const decreasingEl = document.getElementById('riskDecreasingFactors');
+    const caveatEl = document.getElementById('explainCaveat');
 
     if (!explanation) {
       summaryEl.textContent = 'An explanation could not be generated for this prediction.';
       increasingEl.innerHTML = '';
       decreasingEl.innerHTML = '';
+      if (caveatEl) caveatEl.textContent = '';
       return;
     }
 
     summaryEl.textContent = explanation.summary || '';
+    if (caveatEl) caveatEl.textContent = explanation.caveat || '';
 
     const factors = explanation.top_factors || [];
     const increasing = factors.filter(f => f.direction === 'increases_risk');
     const decreasing = factors.filter(f => f.direction === 'decreases_risk');
-    // Scale each card's impact bar relative to the single largest factor
-    // across BOTH groups, so bar length is comparable at a glance.
     const maxImpact = Math.max(...factors.map(f => f.impact), 0.0001);
 
     increasingEl.innerHTML = renderFactorGroup('Factors increasing risk', increasing, 'up', maxImpact);
@@ -152,7 +153,7 @@
         <div class="factor-icon ${dirClass}">${icon}</div>
         <div class="factor-body">
           <div class="factor-title">${f.label}</div>
-          <div class="factor-value">${f.value}</div>
+          <div class="factor-value">${f.note || f.value}</div>
         </div>
         <div class="factor-impact-wrap">
           <div class="factor-impact">${(f.impact * 100).toFixed(1)}%</div>
